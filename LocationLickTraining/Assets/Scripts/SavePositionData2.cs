@@ -17,7 +17,7 @@ public class SavePositionData2 : MonoBehaviour {
 	private StreamWriter sw_pos; // stream writer for position file
 
 	//public Arduino arduino;
-	private bool msgDisp;
+	//private bool msgDisp;
 	[HideInInspector]
 	public bool recordingStarted = false;
 	void Start()
@@ -47,7 +47,7 @@ public class SavePositionData2 : MonoBehaviour {
 
 
 
-		msgDisp = false;
+		//msgDisp = false;
 
 		recordingStarted = true;
 	}

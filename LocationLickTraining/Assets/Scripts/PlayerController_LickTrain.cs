@@ -154,7 +154,7 @@ public class PlayerController_LickTrain : MonoBehaviour
 	private StreamWriter sw_trialListGM;
 	private StreamWriter sw_trialOrder;
 
-	private bool missedArdFrame;
+	private int missedArdFrame;
 
 	private bool endSessionE = false;
 	private bool endSessionU = false;
@@ -420,7 +420,7 @@ public class PlayerController_LickTrain : MonoBehaviour
 			}
 
 			cmdWrite = 1;
-			int missedArdFrame = 0;
+			missedArdFrame = 0;
 			if (ArdUse == ArduinoUse.Uniduino)
 			{
 				_serialPort.Write(cmdWrite.ToString() + ',');
@@ -897,6 +897,11 @@ public class PlayerController_LickTrain : MonoBehaviour
 				sw_startstop.Write("StopSignalPlanned" + "\t" + Time.realtimeSinceStartup + "\n");
 				UnityEditor.EditorApplication.isPlaying = false;
 			}
+		}
+
+		if (missedArdFrame == 1)
+		{
+			//Debug.Log('Missed arduino frame here');
 		}
 	}
 

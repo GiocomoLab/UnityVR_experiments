@@ -6,7 +6,7 @@ public class SessionParams : MonoBehaviour {
 	public bool saveData = false;
 	public string mouse;
 	public string session;
-	private float speedVR = 1f;
+	//private float speedVR = 1f;
 
 	// for saving data
 	public string localDirectory; // = 'C:\Users\giocomolab\Desktop\mice\' ; 

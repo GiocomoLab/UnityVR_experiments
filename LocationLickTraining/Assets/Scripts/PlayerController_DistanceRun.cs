@@ -46,8 +46,8 @@ public class PlayerController_DistanceRun : MonoBehaviour
 	//private List<float> speedArr;
 	private float[] speedArr;
 	private int speedArrSlots;
-	private int currentSpeedSlot = 0;
-	private bool runningSpeedFlag;
+	//private int currentSpeedSlot = 0;
+	//private bool runningSpeedFlag;
 
 	public float rewardDist = 50.0f;
 	public float maxRewardDistance = 550.0f;
@@ -561,10 +561,10 @@ public class PlayerController_DistanceRun : MonoBehaviour
 				currentMeanSpeed += speedArr[i];
 			}
 			currentMeanSpeed = currentMeanSpeed / speedArrSlots;
-			runningSpeedFlag = false;
+			//runningSpeedFlag = false;
 			if (currentMeanSpeed >= minRunningSpeed)
             {
-				runningSpeedFlag = true;
+				//runningSpeedFlag = true;
             }
 
 			// Reward
