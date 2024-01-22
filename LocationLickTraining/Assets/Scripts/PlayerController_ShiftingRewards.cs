@@ -460,6 +460,7 @@ public class PlayerController_ShiftingRewards : MonoBehaviour
 
 		rwMarkerPos = new Vector3(trackOffset_x, -18f, rewardPosition);
 		rewardMarker.transform.position = rwMarkerPos;
+		visRwZoneHeight = visibleRewardZone.transform.position.y;
 		visRwZonePos = new Vector3(trackOffset_x, visRwZoneHeight, rewardPosition);
 		visibleRewardZone.transform.position = visRwZonePos;
 		rewardZoneAlpha = fadeRewardZone.currentTransparency;
@@ -853,7 +854,7 @@ public class PlayerController_ShiftingRewards : MonoBehaviour
 							if (rewardLocRel >= minRewardLocRel & rewardLocRel <= maxRewardLocRel)
 							{
 								rewardPosition = trackLen * rewardLocRel;
-								if ( ((rewardPosition - oldRewardPosition) > rewardZoneBuffer) || ((rewardPosition - oldRewardPosition) < -rewardZoneBuffer) )
+								if ( ((rewardPosition - oldRewardPosition) > rewardZoneBuffer*1.5) || ((rewardPosition - oldRewardPosition) < -rewardZoneBuffer*1.5) )
 								{
 									haveRel = true;
 								}

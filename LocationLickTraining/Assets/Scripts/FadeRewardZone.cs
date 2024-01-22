@@ -19,6 +19,7 @@ public class FadeRewardZone : MonoBehaviour
     
     private int numTraversals;
     private int lastTransparencyChangeTrial = 0;
+    private Vector3 lastPosition;
 
     Renderer rwzoneRenderer;
     // Start is called before the first frame update
@@ -70,13 +71,28 @@ public class FadeRewardZone : MonoBehaviour
             {
                 currentTransparency = 0f;
             }
+            
+
             color.a = currentTransparency;
             rwzoneRenderer.material.color = color;
             Debug.Log("Set reward zone transparency to " + currentTransparency);
 
             lastTransparencyChangeTrial = numTraversals;
         }
+        
+        lastPosition = rewardZone.transform.position;
+        bool lastPos = lastPosition[1] == 0.5f;
+        rewardZone.transform.position = new Vector3(lastPosition[0], 0.5f, lastPosition[2]);
+        if (currentTransparency <= 0f)
+        {
+            rewardZone.transform.position = new Vector3(lastPosition[0], -55.5f, lastPosition[2]);
+            if (lastPos == true)
+            {
+                Debug.Log("moving reward zone down");
+            }
 
+        }
+        
     }
 
     public void ResetTransparency()

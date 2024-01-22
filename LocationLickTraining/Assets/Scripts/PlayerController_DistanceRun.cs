@@ -229,6 +229,7 @@ public class PlayerController_DistanceRun : MonoBehaviour
 			simulatedRunning = true;
 		}
 
+		/*
 		if (ArdUse == ArduinoUse.Uniduino)
 		{
 			Debug.Log("Attempting reward port communication");
@@ -246,6 +247,7 @@ public class PlayerController_DistanceRun : MonoBehaviour
 		{
 			Debug.Log("skipping reward port");
 		}
+		*/
 
 
 		if (ArdUse == ArduinoUse.Uniduino)
@@ -253,8 +255,8 @@ public class PlayerController_DistanceRun : MonoBehaviour
 			_serialPort.DiscardInBuffer();
 			_serialPort.DiscardOutBuffer();
 
-			_serialPortReward.DiscardInBuffer();
-			_serialPortReward.DiscardOutBuffer();
+			//_serialPortReward.DiscardInBuffer();
+			//_serialPortReward.DiscardOutBuffer();
 		}
 
 		Debug.Log("end of wake");
@@ -514,8 +516,8 @@ public class PlayerController_DistanceRun : MonoBehaviour
 
 				if (ArdUse == ArduinoUse.Uniduino)
 				{
-					_serialPortReward.DiscardInBuffer();
-					_serialPortReward.DiscardOutBuffer();
+					//_serialPortReward.DiscardInBuffer();
+					//_serialPortReward.DiscardOutBuffer();
 				}
 			}
 
@@ -775,8 +777,8 @@ public class PlayerController_DistanceRun : MonoBehaviour
 				_serialPort.DiscardInBuffer();
 				_serialPort.DiscardOutBuffer();
 
-				_serialPortReward.DiscardInBuffer();
-				_serialPortReward.DiscardOutBuffer();
+				//_serialPortReward.DiscardInBuffer();
+				//_serialPortReward.DiscardOutBuffer();
 			}
 
 			delta_T = Time.deltaTime;

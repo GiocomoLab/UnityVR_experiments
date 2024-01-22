@@ -24,9 +24,9 @@ public class PlayerController_LickTrain : MonoBehaviour
 	public string thisPort = "COM6";
 	private SerialPort _serialPort;
 	private int delay;
-
-	public string rewardPort = "COM5";
-	private SerialPort _serialPortReward;
+	
+	//public string rewardPort = "COM5";
+	//private SerialPort _serialPortReward;
 
 	public enum ArduinoUse { Uniduino, SimulatedRunning };
 	public ArduinoUse ArdUse;
@@ -219,7 +219,7 @@ public class PlayerController_LickTrain : MonoBehaviour
 			Debug.Log("*Configuring fake pins*");
 			simulatedRunning = true;
 		}
-
+		/*
 		if (ArdUse == ArduinoUse.Uniduino)
 		{
 			Debug.Log("Attempting reward port communication");
@@ -237,15 +237,15 @@ public class PlayerController_LickTrain : MonoBehaviour
 		{
 			Debug.Log("skipping reward port");
 		}
-
+		*/
 
 		if (ArdUse == ArduinoUse.Uniduino)
 		{
 			_serialPort.DiscardInBuffer();
 			_serialPort.DiscardOutBuffer();
 
-			_serialPortReward.DiscardInBuffer();
-			_serialPortReward.DiscardOutBuffer();
+			//_serialPortReward.DiscardInBuffer();
+			//_serialPortReward.DiscardOutBuffer();
 		}
 
 		Debug.Log("end of wake");
@@ -506,12 +506,13 @@ public class PlayerController_LickTrain : MonoBehaviour
 				{
 					sw_startstop.Write("StartSignal" + "\t" + Time.realtimeSinceStartup + "\n");
 				}
-
+				/*
 				if (ArdUse == ArduinoUse.Uniduino)
 				{
 					_serialPortReward.DiscardInBuffer();
 					_serialPortReward.DiscardOutBuffer();
 				}
+				*/
 			}
 
 			cmdWrite = 1;
@@ -811,7 +812,7 @@ public class PlayerController_LickTrain : MonoBehaviour
 					Debug.Log("cmd " + cmdWrite + " reply " + lick_raw + " frame " + Time.frameCount);
 					missedArdFrame = 1;
 				}
-
+				/*
 				if (cmdWrite == 2)
 				{
 					try
@@ -823,6 +824,7 @@ public class PlayerController_LickTrain : MonoBehaviour
 						Debug.Log("failed to write reward command");
 					}
 				}
+				*/
 			}
 
 			if (ArdUse == ArduinoUse.Uniduino)
@@ -830,8 +832,8 @@ public class PlayerController_LickTrain : MonoBehaviour
 				_serialPort.DiscardInBuffer();
 				_serialPort.DiscardOutBuffer();
 
-				_serialPortReward.DiscardInBuffer();
-				_serialPortReward.DiscardOutBuffer();
+				//_serialPortReward.DiscardInBuffer();
+				//_serialPortReward.DiscardOutBuffer();
 			}
 
 			delta_T = Time.deltaTime;
@@ -942,7 +944,7 @@ public class PlayerController_LickTrain : MonoBehaviour
 			this.Open();
 		}
 	}
-
+	/*
 	private void connectRwd(string serialPortName, Int32 baudRate, bool autoStart, int delay)
 	{
 		_serialPortReward = new SerialPort(serialPortName, baudRate);
@@ -966,7 +968,7 @@ public class PlayerController_LickTrain : MonoBehaviour
 			this.OpenRwd();
 		}
 	}
-
+	*/
 	private void Open()
 	{
 		_serialPort.Open();
@@ -976,7 +978,7 @@ public class PlayerController_LickTrain : MonoBehaviour
 			Thread.Sleep(delay);
 		}
 	}
-
+	/*
 	private void OpenRwd()
 	{
 		_serialPortReward.Open();
@@ -986,14 +988,14 @@ public class PlayerController_LickTrain : MonoBehaviour
 			Thread.Sleep(delay);
 		}
 	}
-
+	*/
 	private void Close()
 	{
 		if (_serialPort != null)
 			_serialPort.Close();
 
-		if (_serialPortReward != null)
-			_serialPortReward.Close();
+		//if (_serialPortReward != null)
+		//	_serialPortReward.Close();
 	}
 
 	private void Disconnect()
