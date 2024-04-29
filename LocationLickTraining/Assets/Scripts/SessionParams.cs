@@ -10,7 +10,7 @@ public class SessionParams : MonoBehaviour {
 
 	// for saving data
 	public string localDirectory; // = 'C:\Users\giocomolab\Desktop\mice\' ; 
-	public string serverDirectory; // = "Z:\giocomo\export\data\Projects\Sam_NPX\Unity_Comp_Data\mice";
+	public string serverDirectory; // = "Z:\giocomo\samjlevy\Sam_NPX\Unity_Comp_Data\mice";
 	private string paramsFile;
 	private string serverParamsFile;
 

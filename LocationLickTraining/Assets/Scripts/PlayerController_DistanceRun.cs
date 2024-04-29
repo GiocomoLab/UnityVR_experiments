@@ -25,8 +25,8 @@ public class PlayerController_DistanceRun : MonoBehaviour
 	private SerialPort _serialPort;
 	private int delay;
 
-	public string rewardPort = "COM5";
-	private SerialPort _serialPortReward;
+	//public string rewardPort = "COM5";
+	//private SerialPort _serialPortReward;
 
 	public enum ArduinoUse { Uniduino, SimulatedRunning };
 	public ArduinoUse ArdUse;
@@ -54,6 +54,14 @@ public class PlayerController_DistanceRun : MonoBehaviour
 	public int incrementDistAfterXtrials = 5;
 	private int trialsSinceDistIncremented = 0;
 	public float incrementDistance = 5.0f;
+
+	public bool requireLickForReward = true;
+	public int numFreeRewardsAtStart = 10;
+	public int rewardMissesBeforeReminder = 5;
+	public int numMissedRewards = 0;
+
+	public GameObject RewardTower;
+	public bool visibleRewards = false;
 
 	//private Component frontCamera = GetComponentInChildren<panoCamera.subCam1>;
 	private int cameraViewDist = 165;
@@ -209,6 +217,12 @@ public class PlayerController_DistanceRun : MonoBehaviour
 			trackLen = 450;
 		}
 
+		if (visibleRewards == false)
+        {
+			Vector3 rewardTowerPosSet = new Vector3(-1000.0f, -1000.0f, 0.0f);
+			RewardTower.transform.localPosition = rewardTowerPosSet;
+        }
+
 		// initialize arduino
 		if (ArdUse == ArduinoUse.Uniduino)
 		{
@@ -324,6 +338,12 @@ public class PlayerController_DistanceRun : MonoBehaviour
 		// Set reward boundaries
 		rewardZoneStart = rewardDist - rewardZoneBuffer;
 		rewardZoneEnd = rewardDist;
+
+		if (visibleRewards == true)
+		{
+			Vector3 rewardTowerPosSet = new Vector3(trackOffset_x, 2.0f, rewardDist);
+			RewardTower.transform.position = rewardTowerPosSet;
+		}
 
 		// for saving data	
 		mouse = paramsScript.mouse;
@@ -581,6 +601,7 @@ public class PlayerController_DistanceRun : MonoBehaviour
 					rewardCount += 1;
 					totalRequestedRewards = totalRequestedRewards + 1;
 
+					numMissedRewards = 0;
 					// update debug log and save info
 					Debug.Log("Reward requested " + " Trial= " + (numTraversals + 1) + " lickPinVal= " + lickPinValue +", requested " + totalRequestedRewards);
 
@@ -595,20 +616,29 @@ public class PlayerController_DistanceRun : MonoBehaviour
 			// automatic reward
 			if (transform.position.z > rewardZoneEnd & rewardFlag == 0)
 			{
-				rewardFlag = 1;
-				cmdWrite = 2;
-
-				rewardCount += 1;
-
-				// update debug log
-				Debug.Log("Auto reward delivery " + "Trial= " + (numTraversals + 1) + " lickPinVal= " + lickPinValue + ", requested " + totalRequestedRewards);
-
-				if (saveData)
+				if ((numTraversals + 1 <= numFreeRewardsAtStart) || (requireLickForReward == false) || (numMissedRewards >= rewardMissesBeforeReminder))
 				{
-					sw_reward.Write(Time.realtimeSinceStartup + "\t" + rewardTrial + "\t" + rewardPosition + "\t" + numTraversals + "\t" + 1 + "\t" + 0 + "\n");
-				}
+					rewardFlag = 1;
+					cmdWrite = 2;
 
+					rewardCount += 1;
+
+					numMissedRewards = 0;
+					// update debug log
+					Debug.Log("Auto reward delivery " + "Trial= " + (numTraversals + 1) + " lickPinVal= " + lickPinValue + ", requested " + totalRequestedRewards);
+
+					if (saveData)
+					{
+						sw_reward.Write(Time.realtimeSinceStartup + "\t" + rewardTrial + "\t" + rewardPosition + "\t" + numTraversals + "\t" + 1 + "\t" + 0 + "\n");
+					}
+				}
 			}
+
+			if (transform.position.z > rewardZoneEnd & rewardFlag == 0)
+            {
+				numMissedRewards += 1;
+            }
+
 
 			// teleport
 			if ((transform.position.z > rewardZoneEnd)) // | (transform.position.z < timeoutLimit)
@@ -638,6 +668,12 @@ public class PlayerController_DistanceRun : MonoBehaviour
 							rewardDist = rewardDist + incrementDistance;
 							rewardZoneStart = rewardDist - rewardZoneBuffer;
 							rewardZoneEnd = rewardDist;
+
+							if (visibleRewards == true)
+							{
+								Vector3 rewardTowerPosSet = new Vector3(trackOffset_x, 2.0f, rewardDist);
+								RewardTower.transform.position = rewardTowerPosSet;
+							}
 						}
 						trialsSinceDistIncremented = 0;
                     }
@@ -685,7 +721,6 @@ public class PlayerController_DistanceRun : MonoBehaviour
 
 				}
 			}
-
 
 			int missedArdFrame = 0;
 			if (ArdUse == ArduinoUse.Uniduino)
@@ -758,7 +793,7 @@ public class PlayerController_DistanceRun : MonoBehaviour
 					Debug.Log("cmd " + cmdWrite + " reply " + lick_raw + " frame " + Time.frameCount);
 					missedArdFrame = 1;
 				}
-
+				/*
 				if (cmdWrite == 2)
 				{
 					try
@@ -770,6 +805,7 @@ public class PlayerController_DistanceRun : MonoBehaviour
 						Debug.Log("failed to write reward command");
 					}
 				}
+				*/
 			}
 
 			if (ArdUse == ArduinoUse.Uniduino)
@@ -894,7 +930,7 @@ public class PlayerController_DistanceRun : MonoBehaviour
 			this.Open();
 		}
 	}
-
+	/*
 	private void connectRwd(string serialPortName, Int32 baudRate, bool autoStart, int delay)
 	{
 		_serialPortReward = new SerialPort(serialPortName, baudRate);
@@ -918,7 +954,7 @@ public class PlayerController_DistanceRun : MonoBehaviour
 			this.OpenRwd();
 		}
 	}
-
+	*/
 	private void Open()
 	{
 		_serialPort.Open();
@@ -928,7 +964,7 @@ public class PlayerController_DistanceRun : MonoBehaviour
 			Thread.Sleep(delay);
 		}
 	}
-
+	/*
 	private void OpenRwd()
 	{
 		_serialPortReward.Open();
@@ -938,14 +974,14 @@ public class PlayerController_DistanceRun : MonoBehaviour
 			Thread.Sleep(delay);
 		}
 	}
-
+	*/
 	private void Close()
 	{
 		if (_serialPort != null)
 			_serialPort.Close();
 
-		if (_serialPortReward != null)
-			_serialPortReward.Close();
+		//if (_serialPortReward != null)
+		//	_serialPortReward.Close();
 	}
 
 	private void Disconnect()
