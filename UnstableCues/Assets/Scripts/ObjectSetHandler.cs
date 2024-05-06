@@ -10,7 +10,7 @@ public class ObjectSetHandler : MonoBehaviour
     public List<GameObject> allObjectCues;
 
     public int[] objectSetA = { 0, 1, 2, 3, 4 };
-    public float[] positionsRelA = { 0.1f, 0.2f, 0.45f, 0.6f, 0.85f };
+    public float[] positionsRelA = { 0.1f, 0.21f, 0.45f, 0.6f, 0.87f };
     public int[] objectSetB = { 5, 6, 7, 8 };
     public float[] positionsRelB = { 0.15f, 0.3f, 0.55f, 0.9f };
 
@@ -38,6 +38,7 @@ public class ObjectSetHandler : MonoBehaviour
     [HideInInspector] public List<int[]> trialObjectNums = new List<int[]>();
 
     [HideInInspector] public float[] trackOffsets;
+    [HideInInspector] public float[] trackLens;
 
     [HideInInspector] public int numTraversals;
 
@@ -49,10 +50,18 @@ public class ObjectSetHandler : MonoBehaviour
     void Awake()
     {
         Debug.Log("start of ObjectSetHandler Awake");
+
+        Debug.Log("there are " + allObjectCues.Count + " cues in the object cues list, check this is right.");
+        if (allObjectCues.Count == 0)
+        {
+            Debug.Log("No object cues attached to object handler");
+            UnityEditor.EditorApplication.isPlaying = false;
+        }
         
         // Get some data from player controller
         trackLenA = playerController.trackLenA;
         trackLenB = playerController.trackLenB;
+        trackLens = playerController.trackLens;
         trackOffsets = playerController.trackOffsets;
 
         trialNumbersA = playerController.trialNumbersA;
@@ -129,10 +138,6 @@ public class ObjectSetHandler : MonoBehaviour
             }
         }
 
-        List<float[]> trialObjectPositionsRel = new List<float[]>();
-        List<float[]> trialObjectPositions = new List<float[]>();
-        List<int[]> trialObjectNums = new List<int[]>();
-
         // Object Positions and identities each trial
         for (int trialI = 0; trialI < totalTrials; trialI++)
         {
@@ -161,18 +166,19 @@ public class ObjectSetHandler : MonoBehaviour
             }
 
             float[] positionsAbsH = new float[objectsH.Length];
-            for (int objI=0; objI < objectsH.Length; objI++) { positionsAbsH[objI] = positionsRelH[objI] * trackOffsets[trialContext[trialI] - 1]; }
+            for (int objI=0; objI < objectsH.Length; objI++) { positionsAbsH[objI] = positionsRelH[objI] * trackLens[trialContext[trialI] - 1]; }
             
             trialObjectPositions.Add(positionsAbsH);
             trialObjectPositionsRel.Add(positionsRelH);
             trialObjectNums.Add(objectsH);
         }
-        
+
         int[] testTrials = { 0, 4, 6, 12 };
         foreach(int x in testTrials)
         {
             Debug.Log("trial " + x + " stable: " + trialStable[x]);
             PrintFloatArr(trialObjectPositionsRel[x]);
+            PrintFloatArr(trialObjectPositions[x]);
         }
 
         //SaveTrialListToFile();
@@ -190,7 +196,7 @@ public class ObjectSetHandler : MonoBehaviour
     void Update()
     {
         currentTrialNum = playerController.numTraversals;
-        SetTrialObjectPositions();
+        //SetTrialObjectPositions();
     }
 
     public void SetTrialObjectPositions()//allObjectCues[objI].transform.position = hiddenObjPosition;
@@ -198,13 +204,15 @@ public class ObjectSetHandler : MonoBehaviour
         ResetAllObjects();
 
         int[] objectsH = trialObjectNums[numTraversals];
+        float[] positionsH = trialObjectPositions[numTraversals];
 
+        float xOffsetH = trackOffsets[trialContext[numTraversals] - 1];
         for (int objI = 0; objI < objectsH.Length; objI++)
         {
             int thisObj = objectsH[objI];
             Vector3 currentObjPosition = allObjectCues[thisObj].transform.position;
-            Vector3 newObjPosition = new Vector3(currentObjPosition.x, currentObjPosition.y, -500.0f);
-            allObjectCues[objI].transform.position = newObjPosition;
+            Vector3 newObjPosition = new Vector3(currentObjPosition.x + xOffsetH, currentObjPosition.y, positionsH[objI]);
+            allObjectCues[thisObj].transform.position = newObjPosition;
         }
     }
 
@@ -216,6 +224,7 @@ public class ObjectSetHandler : MonoBehaviour
             Vector3 hiddenObjPosition = new Vector3( currentObjPosition.x, currentObjPosition.y, -500.0f );
             allObjectCues[objI].transform.position = hiddenObjPosition;
         }
+        //Debug.Log("Made it through object resetting");
     }
 
 

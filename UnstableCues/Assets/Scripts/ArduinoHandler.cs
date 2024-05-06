@@ -132,6 +132,9 @@ public class ArduinoHandler : MonoBehaviour
         {
             Debug.Log("cmd " + cmdWrite + " reply " + lick_raw + " frame " + Time.frameCount);
         }
+
+        _serialPort.DiscardInBuffer();
+        _serialPort.DiscardOutBuffer();
     }
 
     private void connect(string serialPortName, Int32 baudRate, bool autoStart, int delay)
