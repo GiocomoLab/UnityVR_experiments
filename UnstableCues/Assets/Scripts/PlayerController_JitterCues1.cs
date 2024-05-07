@@ -17,8 +17,11 @@ public class PlayerController_JitterCues1 : MonoBehaviour
     public float trackLenB = 400.0f;
     public float trackOffsetA = 0.0f;
     public float trackOffsetB = 200.0f;
-
-    //public int environmentPair = 1;
+    public float rewardZoneA = 0.75f;
+    public float rewardZoneB = 0.5f;
+    public float rewardZoneSizeTotal = 25.0f;
+    private float rewardLocation, rewardZoneStart, rewardZoneEnd;
+    [HideInInspector] private float[] rewardZones = new float[2];
 
     public float startOffsetMin = 0.0f;
     public float startOffsetMax = 0.0f; //75.0f; Test this later
@@ -40,16 +43,17 @@ public class PlayerController_JitterCues1 : MonoBehaviour
     private List<int> trialNum; 
     private List<int> trialBlockNums;
     
-
     [HideInInspector] public float[] trackOffsets = new float[2];
     [HideInInspector] public float[] trackLens = new float[2];
     private float trackOffset_x;
+    private float trackLenNow;
 
     public int lickPinValue;
     public int lickThresh = 500;
     public int lickFlag;
     private int numLicks;
     private int rewardFlag;
+    private int requestedRewards, freeRewards, missedRewards, automaticReward;
 
     public GameObject blackoutEnd;
     public float darkTrackOffset_x = -200.0f;
@@ -69,6 +73,7 @@ public class PlayerController_JitterCues1 : MonoBehaviour
 
     private bool endSessionE, endSessionU, dispEndSessE, dispEndSessU, ifSetSkipToEnd;
     private bool justTeleported, allowMovement;
+    private bool dispRegLapsStart, dispDarkBeforeLapsStart, dispDarkAfterLapsStart;
 
     private Vector3 lastPosition;
 
@@ -81,11 +86,12 @@ public class PlayerController_JitterCues1 : MonoBehaviour
 
         trackOffsets[0] = trackOffsetA; trackOffsets[1] = trackOffsetB;
         trackLens[0] = trackLenA; trackLens[1] = trackLenB;
+        rewardZones[0] = rewardZoneA; rewardZones[1] = rewardZoneB;
     }
     
     void Start()
     {
-        Debug.Log("PlayerController start");
+        Debug.Log("PlayerController start; HAS TO RUN BEFORE OBJECTHANDLER!"); 
 
         trialContext = objectSetHandler.trialContext;
         trialStable = objectSetHandler.trialStable;
@@ -99,8 +105,6 @@ public class PlayerController_JitterCues1 : MonoBehaviour
         trackOffset_x = trackOffsets[trialContext[0] - 1];
         Vector3 initialPosition = new Vector3(trackOffset_x, 0.5f, initialPosition_z);
         transform.position = initialPosition;
-
-        //objectSetHandler.SetTrialObjectPositions(0); // Handled by object set handler
     }
 
     // Update is called once per frame
@@ -123,12 +127,10 @@ public class PlayerController_JitterCues1 : MonoBehaviour
             arduinoHandler.sendCmdReadReply(cmdWrite);
             lickPinValue = arduinoHandler.lickPinValue;
 
-            //if (lickPinValue > 500 & lickFlag == 1)
             if (lickPinValue > lickThresh)
             {
                 lickFlag = 0;
             }
-            //if (lickPinValue < 500 & lickFlag == 0)
             if (lickPinValue <= lickThresh)
             {
                 numLicks += 1;
@@ -138,7 +140,6 @@ public class PlayerController_JitterCues1 : MonoBehaviour
 
         if (recordingStarted == true)
         {
-
             if (sentStartSignal == false)
             {
                 arduinoHandler.sendStartSignal();
@@ -175,33 +176,69 @@ public class PlayerController_JitterCues1 : MonoBehaviour
 
             if (numTraversalsDarkBefore < numDarkLapsBefore)
             {
+                if (dispDarkBeforeLapsStart == false) { Debug.Log("Starting early dark laps"); dispDarkBeforeLapsStart = true; }
+                allowMovement = true;
+
                 lastPosition.x = darkTrackOffset_x;
 
                 if (lastPosition.z >= darkTrackLength)
                 {
                     lastPosition.z = 0.0f;
                     numTraversalsDarkBefore++;
-                    Debug.Log("Done post dark lap " + numTraversalsDarkAfter + " / " + numDarkLapsAfter);
+                    Debug.Log("Done post dark lap " + numTraversalsDarkBefore + " / " + numDarkLapsBefore);
                 }
 
                 transform.position = lastPosition;
-                Vector3 blackoutPos = blackoutEnd.transform.position;
-                blackoutPos.z = lastPosition.z + 15.0f;
-                blackoutEnd.transform.position = blackoutPos;
             }
 
             if (numTraversalsDarkBefore >= numDarkLapsBefore)
             {
                 if (numTraversals < numTotalLaps)
                 {
+                    if (dispRegLapsStart == false) { Debug.Log("Starting regular laps"); dispRegLapsStart = true; }
+                    allowMovement = true;
                     lastPosition.x = trackOffsets[trialContext[numTraversals] - 1];
+                    trackLenNow = trackLens[trialContext[numTraversals] - 1];
 
                     // Evaluate reward
+                    rewardLocation = rewardZones[trialContext[numTraversals] - 1]*trackLenNow;
+                    rewardZoneStart = rewardLocation - rewardZoneSizeTotal / 2.0f;
+                    rewardZoneEnd = rewardLocation + rewardZoneSizeTotal / 2.0f;
 
-                    // End of lap stuff
+                    if (transform.position.z >= rewardZoneStart && rewardFlag == 0)
+                    {
+                        if (transform.position.z <= rewardZoneEnd)
+                        {
+                            if (lickFlag == 1)
+                            {
+                                cmdWrite = 2;
+                                rewardFlag = 1;
+                                // All the other reward stuff
+                                Debug.Log("Requested reward trial " + (numTraversals + 1));
+                                requestedRewards++;
+                            }
 
-                    // teleport
-                    if (transform.position.z > trackLens[trialContext[numTraversals]-1]) // | (transform.position.z < timeoutLimit)
+                            if (transform.position.z >= rewardLocation && automaticReward==1)
+                            {
+                                cmdWrite = 2;
+                                rewardFlag = 1;
+                                Debug.Log("Automatic reward trial " + (numTraversals + 1));
+                                freeRewards++;
+                            }
+                        }
+
+                        if (transform.position.z > rewardZoneEnd && rewardFlag == 0)
+                        {
+                            Debug.Log("Missed reward trial " + (numTraversals + 1));
+                            missedRewards++;
+                            rewardFlag = 1;
+                        }
+                    }
+
+
+                    // teleport/end of lap
+                    // It would be nice to try to cut this down...
+                    if (transform.position.z > trackLenNow) 
                     {
                         bool allowLapEnd = true;
 
@@ -215,9 +252,10 @@ public class PlayerController_JitterCues1 : MonoBehaviour
                             }
                         }
 
+                        if (timeoutMax <= 0.0f) { UseTimeout = false; }
                         if (UseTimeout == true)
                         {
-                            if (numTraversals+1 == numTotalLaps)
+                            if (numTraversals+1 == numTotalLaps) // Don't run a delay on the last lap, it'll get confusing with dark running
                             {
                                 haveSetTimeoutEnd = true;
                                 timeoutOver = Time.realtimeSinceStartup - 1.0f;
@@ -226,9 +264,6 @@ public class PlayerController_JitterCues1 : MonoBehaviour
                             if (haveSetTimeoutEnd == false)
                             {
                                 float timeoutDelay = UnityEngine.Random.Range(timeoutMin, timeoutMax);
-                                if (timeoutMax <= 0.0f) { timeoutDelay = -1.0f; }
-                                
-                                
                                 timeoutOver = Time.realtimeSinceStartup + timeoutDelay;
                                 haveSetTimeoutEnd = true;
                                 Debug.Log("Time out for " + timeoutDelay + "s" + "; This was at " + System.DateTime.Now);
@@ -253,10 +288,11 @@ public class PlayerController_JitterCues1 : MonoBehaviour
                         {
                             numTraversals += 1;
                             Debug.Log("Ending lap: numTraversals = " + numTraversals + " / numTrialsTotal = " + numTotalLaps);
+                            Debug.Log("Reward summary: requested " + requestedRewards + ", automatic " + freeRewards + ", out of nlaps " + numTraversals);
                             
                             if (numTraversals < numTotalLaps) // Don't teleport on last sample
                             {
-                                transform.position = new Vector3(trackOffsets[trialContext[numTraversals] - 1], lastPosition[1], 0.0f);
+                                transform.position = new Vector3(trackOffsets[trialContext[numTraversals] - 1], 0.5f, 0.0f);
                                 lastPosition = transform.position;
                                 justTeleported = true;
                             }
@@ -270,18 +306,13 @@ public class PlayerController_JitterCues1 : MonoBehaviour
 
                             if (numTraversals < numTotalLaps)
                             {
-
-                                if (numTraversals == (numTotalLaps - 1))
-                                {
-                                    Debug.Log("this was the second to last lap");
-                                }
+                                if (numTraversals == (numTotalLaps - 1)) { Debug.Log("this was the second to last lap"); }
                             }
                             else
                             {
                                 Debug.Log("This was the last lap, numTraversals = " + numTraversals);
-                                numTraversals = numTotalLaps; // for easier indexing
+                                numTraversals = numTotalLaps; // for easier indexing, will go over on last frame of last lap
                             }
-
                         }
                     }
                 }
@@ -291,6 +322,9 @@ public class PlayerController_JitterCues1 : MonoBehaviour
             {
                 if (numTraversalsDarkAfter < numDarkLapsAfter)
                 {
+                    if (dispDarkAfterLapsStart == false) { Debug.Log("Starting late dark laps"); dispDarkAfterLapsStart = true; }
+
+                    allowMovement = true;
                     lastPosition.x = darkTrackOffset_x;
 
                     if (lastPosition.z >= darkTrackLength)
@@ -310,9 +344,6 @@ public class PlayerController_JitterCues1 : MonoBehaviour
                 }
 
                 transform.position = lastPosition;
-                Vector3 blackoutPos = blackoutEnd.transform.position;
-                blackoutPos.z = lastPosition.z + 15.0f;
-                blackoutEnd.transform.position = blackoutPos;
             }
 
             // Update position, etc.
@@ -323,9 +354,9 @@ public class PlayerController_JitterCues1 : MonoBehaviour
             syncPinState = arduinoHandler.syncPinState;
             startStopPinState = arduinoHandler.startStopPinState;
             missedArdFrame = arduinoHandler.missedArdFrame;
+            //Debug.Log("rotaryTicks " + rotaryTicks);
 
-            if ( lickPinValue < lickThresh ) { lickFlag = 1; }
-            if (lickFlag==1) { numLicks += 1; }
+            if ( lickPinValue < lickThresh ) { lickFlag = 1; numLicks += 1; }
 
             delta_T = Time.deltaTime;
             delta_z = rotaryTicks * speed;
@@ -339,7 +370,6 @@ public class PlayerController_JitterCues1 : MonoBehaviour
             current_z = transform.position.z;
             if (allowMovement == true)
             {
-
                 if (rotaryTicks == 0)
                 {
                     transform.position = lastPosition; // possible could get stuck here on a lap transition
@@ -347,17 +377,17 @@ public class PlayerController_JitterCues1 : MonoBehaviour
                 else
                 {
                     float new_z = current_z + delta_z;
-                    if (new_z < -5.0f)
-                    {
-                        new_z = 0.0f;
-                    }
+                    if (new_z < -5.0f) { new_z = 0.0f; }
                     transform.position = new Vector3(lastPosition[0], lastPosition[1], new_z);
                 }
                 lastPosition = transform.position;
             }
 
-        }
-    }
+            Vector3 blackoutPos = blackoutEnd.transform.position;
+            blackoutPos.z = lastPosition.z + 15.0f;
+            blackoutEnd.transform.position = blackoutPos;
+        } // recording started true
+    } // update
 
     // save trial data to server
     void OnApplicationQuit()

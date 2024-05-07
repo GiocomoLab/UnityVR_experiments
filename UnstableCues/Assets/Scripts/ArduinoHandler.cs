@@ -13,6 +13,14 @@ public class ArduinoHandler : MonoBehaviour
     private SerialPort _serialPort;
     private int delay;
 
+    public enum ArduinoSource {Arduino,FixedSimSpeed,KeyboardSimSpeed};
+    public ArduinoSource arduinoSource;
+    public float simulatedSpeed = 100.0f;
+
+    private float speed = 0.0447f; // Conversion from rotaryTicks to cm/s. Cheating to hardcode it here, oh well...
+
+    private bool Winput, Dinput;
+
     private string lick_raw;
     [HideInInspector] public int lickPinValue;
     [HideInInspector] public int rotaryTicks;
@@ -22,21 +30,57 @@ public class ArduinoHandler : MonoBehaviour
 
     void Awake()
     {
-        try
+        switch (arduinoSource)
         {
-            connect(thisPort, 115200, true, 10);
-            Debug.Log("Connected to lick and sync ports");
-        }
-        catch
-        {
-            Debug.Log("failed to connect to lick and sync ports");
-        }
+            case ArduinoSource.Arduino:
+                try
+                {
+                    connect(thisPort, 115200, true, 10);
+                    Debug.Log("Connected to lick and sync ports");
+                }
+                catch
+                {
+                    Debug.Log("failed to connect to lick and sync ports");
+                }
 
-        _serialPort.DiscardInBuffer();
-        _serialPort.DiscardOutBuffer();
+                _serialPort.DiscardInBuffer();
+                _serialPort.DiscardOutBuffer();
+                break;
+            case ArduinoSource.FixedSimSpeed:
+                Debug.Log("Using a fixed running speed  of " + simulatedSpeed + " instead of Arduino input");
+                break;
+            case ArduinoSource.KeyboardSimSpeed:
+                Debug.Log("Using keyboard input, use W to move forward at " + simulatedSpeed + " and F to lick");
+                break;
+            default:
+                break;
+        }
     }
     // Start is called before the first frame update
     void Start()
+    {
+        if (arduinoSource == ArduinoSource.Arduino)
+        {
+            ArduinoHandshake();
+        }
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        Winput = false;
+        Dinput = false;
+        if (Input.GetKey("w"))
+        {
+            Winput = true;
+        }
+        if (Input.GetKey("d"))
+        {
+            Dinput = true;
+        }
+    }
+
+    public void ArduinoHandshake()
     {
         Debug.Log("Handshaking Arduino connection...");
         bool connectedArd = false;
@@ -70,21 +114,48 @@ public class ArduinoHandler : MonoBehaviour
         }
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-
     public void sendStartSignal()
     {
-        int cmdWrite = 4;
-        _serialPort.Write(cmdWrite.ToString() + ',');
-        _serialPort.DiscardInBuffer();
-        _serialPort.DiscardOutBuffer();
+        if (arduinoSource == ArduinoSource.Arduino)
+        {
+            int cmdWrite = 4;
+            _serialPort.Write(cmdWrite.ToString() + ',');
+            _serialPort.DiscardInBuffer();
+            _serialPort.DiscardOutBuffer();
+        }
     }
 
     public void sendCmdReadReply(int cmdWrite)
+    {
+        lickPinValue = 1023;
+        rotaryTicks = 0;
+        syncPinState = 0;
+        startStopPinState = 0; // Could sim this for test purposes...
+
+        switch (arduinoSource)
+        {
+            case ArduinoSource.Arduino:
+                sendCmdReadReplyActual(cmdWrite);
+                break;
+            case ArduinoSource.FixedSimSpeed:
+                rotaryTicks = (int)(simulatedSpeed / speed);
+                break;
+            case ArduinoSource.KeyboardSimSpeed:
+                if (Winput==true)
+                {   
+                    rotaryTicks = (int)((simulatedSpeed / speed) * Time.deltaTime);
+                }
+                if (Dinput==true)
+                {
+                    lickPinValue = 1; // Should always be low enough to trigger the flag
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    public void sendCmdReadReplyActual(int cmdWrite)
     {
         _serialPort.Write(cmdWrite.ToString() + ',');
         missedArdFrame = 0;
@@ -173,8 +244,11 @@ public class ArduinoHandler : MonoBehaviour
     
     private void Close()
     {
-        if (_serialPort != null)
-            _serialPort.Close();
+        if (arduinoSource == ArduinoSource.Arduino)
+        {
+            if (_serialPort != null)
+                _serialPort.Close();
+        }
     }
 
     private void Disconnect()

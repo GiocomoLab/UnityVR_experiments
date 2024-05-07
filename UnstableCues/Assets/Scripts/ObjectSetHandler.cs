@@ -40,12 +40,10 @@ public class ObjectSetHandler : MonoBehaviour
     [HideInInspector] public float[] trackOffsets;
     [HideInInspector] public float[] trackLens;
 
-    [HideInInspector] public int numTraversals;
-
     private int totalTrials = 0;
     private int totalBlocks = 0;
 
-    private float currentTrialNum = 0;
+    private int numTraversals = 0;
 
     void Awake()
     {
@@ -173,6 +171,7 @@ public class ObjectSetHandler : MonoBehaviour
             trialObjectNums.Add(objectsH);
         }
 
+        /*
         int[] testTrials = { 0, 4, 6, 12 };
         foreach(int x in testTrials)
         {
@@ -180,14 +179,13 @@ public class ObjectSetHandler : MonoBehaviour
             PrintFloatArr(trialObjectPositionsRel[x]);
             PrintFloatArr(trialObjectPositions[x]);
         }
-
+        */
         //SaveTrialListToFile();
-
     }
 
     void Start()
     {
-        Debug.Log("start of ObjectSetHandler Start");
+        Debug.Log("start of ObjectSetHandler Start; HAS TO RUN AFTER PLAYER CONTROLLER!");
 
         SetTrialObjectPositions();
     }
@@ -195,8 +193,8 @@ public class ObjectSetHandler : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        currentTrialNum = playerController.numTraversals;
-        //SetTrialObjectPositions();
+        numTraversals = playerController.numTraversals;
+        SetTrialObjectPositions();
     }
 
     public void SetTrialObjectPositions()//allObjectCues[objI].transform.position = hiddenObjPosition;
@@ -211,7 +209,7 @@ public class ObjectSetHandler : MonoBehaviour
         {
             int thisObj = objectsH[objI];
             Vector3 currentObjPosition = allObjectCues[thisObj].transform.position;
-            Vector3 newObjPosition = new Vector3(currentObjPosition.x + xOffsetH, currentObjPosition.y, positionsH[objI]);
+            Vector3 newObjPosition = new Vector3(xOffsetH, currentObjPosition.y, positionsH[objI]);
             allObjectCues[thisObj].transform.position = newObjPosition;
         }
     }
@@ -221,7 +219,7 @@ public class ObjectSetHandler : MonoBehaviour
         for (int objI=0; objI < allObjectCues.Count; objI++)
         {
             Vector3 currentObjPosition = allObjectCues[objI].transform.position;
-            Vector3 hiddenObjPosition = new Vector3( currentObjPosition.x, currentObjPosition.y, -500.0f );
+            Vector3 hiddenObjPosition = new Vector3( 0.0f, currentObjPosition.y, -500.0f );
             allObjectCues[objI].transform.position = hiddenObjPosition;
         }
         //Debug.Log("Made it through object resetting");
