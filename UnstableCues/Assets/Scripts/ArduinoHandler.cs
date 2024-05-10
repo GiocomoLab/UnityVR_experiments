@@ -221,7 +221,7 @@ public class ArduinoHandler : MonoBehaviour
         _serialPort.DataBits = 8;
         _serialPort.Parity = Parity.None;
         _serialPort.StopBits = StopBits.One;
-        _serialPort.ReadTimeout = 5; // since on windows we *cannot* have a separate read thread
+        _serialPort.ReadTimeout = 7; // since on windows we *cannot* have a separate read thread
         _serialPort.WriteTimeout = 1000;
 
 

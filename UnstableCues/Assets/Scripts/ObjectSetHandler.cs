@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-//using System.Collections.Mathf;
 
 public class ObjectSetHandler : MonoBehaviour
 {
@@ -44,6 +43,8 @@ public class ObjectSetHandler : MonoBehaviour
     private int totalBlocks = 0;
 
     private int numTraversals = 0;
+
+    private bool dispOutOfTrials = false;
 
     void Awake()
     {
@@ -159,7 +160,7 @@ public class ObjectSetHandler : MonoBehaviour
                 
                 for (int objI = 0; objI < objectsH.Length; objI++)
                 {
-                    positionsRelH[objI] = positionsRelRef[objI] + (Random.Range(0, jitterRangesH[objI]) - jitterRangesH[objI] / 2);
+                    positionsRelH[objI] = positionsRelRef[objI] + (Random.Range(0.0f, jitterRangesH[objI]) - (jitterRangesH[objI] / 2.0f));
                 }
             }
 
@@ -180,7 +181,7 @@ public class ObjectSetHandler : MonoBehaviour
             PrintFloatArr(trialObjectPositions[x]);
         }
         */
-        //SaveTrialListToFile();
+        
     }
 
     void Start()
@@ -194,7 +195,18 @@ public class ObjectSetHandler : MonoBehaviour
     void Update()
     {
         numTraversals = playerController.numTraversals;
-        SetTrialObjectPositions();
+        if (numTraversals < trialContext.Count)
+        {
+            SetTrialObjectPositions();
+        }
+        else
+        {
+            if (dispOutOfTrials == false)
+            { 
+                Debug.Log("Out of trials to set objects; numTraversals " + numTraversals + ", trials made " + trialContext.Count);
+                dispOutOfTrials = true;
+            }
+        }
     }
 
     public void SetTrialObjectPositions()//allObjectCues[objI].transform.position = hiddenObjPosition;
@@ -224,9 +236,6 @@ public class ObjectSetHandler : MonoBehaviour
         }
         //Debug.Log("Made it through object resetting");
     }
-
-
-
 
     void PrintFloatArr(float[] floatArr)
     {
@@ -273,14 +282,5 @@ public class ObjectSetHandler : MonoBehaviour
         }
         */
         return objPositionsRel;
-    }
-
-    void SaveTrialListToFile()
-    {
-        Debug.Log("Displaying trial list");
-        for (int trialI = 0; trialI < trialNum.Count; trialI++)
-        {
-            Debug.Log("trialI " + (trialI + 1) + ", trialNum " + trialNum[trialI] + ", trialStable " + trialStable[trialI] + ", context " + trialContext[trialI] + ", trialBlockNums " + trialBlockNums[trialI]);
-        }
     }
 }
