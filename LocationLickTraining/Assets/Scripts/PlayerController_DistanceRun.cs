@@ -638,8 +638,8 @@ public class PlayerController_DistanceRun : MonoBehaviour
 			if (transform.position.z > rewardZoneEnd & rewardFlag == 0)
             {
 				numMissedRewards += 1;
+				Debug.Log("Missed reward trial= " + (numTraversals + 1));
             }
-
 
 			// teleport
 			if ((transform.position.z > rewardZoneEnd)) // | (transform.position.z < timeoutLimit)
