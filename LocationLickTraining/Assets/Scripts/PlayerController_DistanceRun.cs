@@ -37,6 +37,7 @@ public class PlayerController_DistanceRun : MonoBehaviour
 	public int trackUse = 1;
 
 	public int lickPinValue;
+	public int lickThresh = 500;
 	public int currentSpeed;
 
 	public bool useMinRunningSpeed = false; //switches into run distance + speed minimum to trigger reward
@@ -761,12 +762,12 @@ public class PlayerController_DistanceRun : MonoBehaviour
 
 
 					//if (lickPinValue > 500 & lickFlag == 1)
-					if (lickPinValue > 500)
+					if (lickPinValue >= lickThresh)
 					{
 						lickFlag = 0;
 					}
 					//if (lickPinValue < 500 & lickFlag == 0)
-					if (lickPinValue < 500)
+					if (lickPinValue < lickThresh)
 					{
 						numLicks += 1;
 						lickFlag = 1;
