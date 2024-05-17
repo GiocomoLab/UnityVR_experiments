@@ -13,8 +13,10 @@ public class PlayerController_JitterCues1 : MonoBehaviour
     public SessionParams sessionParams;
 
     public int numTraversals = 0;
-    public int numTraversalsDarkBefore = 0;
-    public int numTraversalsDarkAfter = 0;
+    private int numTraversalsThisBlock = 0;
+    private int numTraversalsDarkBefore = 0;
+    private int numTraversalsDarkAfter = 0;
+    private int thisBlockNum, lastBlockNum;
 
     public int lickPinValue;
     public int lickThresh = 500;
@@ -41,6 +43,9 @@ public class PlayerController_JitterCues1 : MonoBehaviour
 
     public List<int> trialNumbersA, trialNumbersB;
     public List<bool> blocksStableA, blocksStableB;
+    public List<int> rewardsAtStartA, rewardsAtStartB;
+    public List<int> missesBeforeReminderA, missesBeforeReminderB;
+    private int[] rewardsAtStart, missesBeforeReminder;
 
     private List<bool> trialStable;
     private List<int> trialNum, trialBlockNums, trialContext;
@@ -53,7 +58,7 @@ public class PlayerController_JitterCues1 : MonoBehaviour
     private float trackLenNow;
 
     private int rewardFlag;
-    private int requestedRewards, freeRewards, missedRewards, automaticReward, numLicks;
+    private int requestedRewards, freeRewards, missedRewards, automaticReward, numLicks, numMissedRewards;
     private int anticipatoryLicks, rewardLicks, consummatoryLicks, innaccurateLicks;
     private float anticipatoryLickRate, rewardLickRate, consummatoryLickRate, probablyGoodLickRate;
 
@@ -124,6 +129,30 @@ public class PlayerController_JitterCues1 : MonoBehaviour
             doneDarkLapsBefore = true;
         }
 
+
+        missesBeforeReminder = new int[missesBeforeReminderA.Count + missesBeforeReminderB.Count];
+        rewardsAtStart = new int[rewardsAtStartA.Count + rewardsAtStartB.Count];
+        for (int ii=0; ii<Mathf.Max(missesBeforeReminderA.Count, missesBeforeReminderB.Count); ii++)
+        {
+            if (ii < missesBeforeReminderA.Count)
+            {
+                missesBeforeReminder[(ii+1) * 2 - 2] = missesBeforeReminderA[ii];
+            }
+            if (ii < missesBeforeReminderB.Count)
+            {
+                missesBeforeReminder[(ii+1) * 2 - 1] = missesBeforeReminderB[ii];
+            }
+
+            if (ii < rewardsAtStartA.Count)
+            {
+                rewardsAtStart[(ii+1) * 2 - 2] = rewardsAtStartA[ii];
+            }
+            if (ii < rewardsAtStartB.Count)
+            {
+                rewardsAtStart[(ii+1) * 2 - 1] = rewardsAtStartB[ii];
+            }
+        }
+
         fullLocalStr = sessionParams.fullLocalStr;
         fullServerStr = sessionParams.fullServerStr;
         mouse = sessionParams.mouse;
@@ -169,6 +198,7 @@ public class PlayerController_JitterCues1 : MonoBehaviour
         if (Application.targetFrameRate != target)
             Application.targetFrameRate = target;
 
+        lastBlockNum = -1;
         cmdWrite = 1;
     }
 
@@ -265,11 +295,25 @@ public class PlayerController_JitterCues1 : MonoBehaviour
                 lastPosition.x = trackOffsets[trialContext[numTraversals] - 1];
                 trackLenNow = trackLens[trialContext[numTraversals] - 1];
 
+                thisBlockNum = trialBlockNums[numTraversals];
+                if (thisBlockNum != lastBlockNum)
+                {
+                    numMissedRewards = 0;
+                    numTraversalsThisBlock = 0;
+                    lastBlockNum = thisBlockNum;
+                }
+
                 // Evaluate reward
                 rewardLocation = rewardZones[trialContext[numTraversals] - 1]*trackLenNow;
                 rewardZoneStart = rewardLocation - rewardZoneSizeTotal / 2.0f;
                 rewardZoneEnd = rewardLocation + rewardZoneSizeTotal / 2.0f;
                 UpdateLickingAccuracy();
+
+                automaticReward = 0;
+                if ((numTraversalsThisBlock < rewardsAtStart[thisBlockNum]) || (numMissedRewards >= missesBeforeReminder[thisBlockNum]))
+                {
+                    automaticReward = 1;
+                }
 
                 if (transform.position.z >= rewardZoneStart && rewardFlag == 0)
                 {
@@ -282,6 +326,7 @@ public class PlayerController_JitterCues1 : MonoBehaviour
                             // All the other reward stuff
                             Debug.Log("Requested reward trial " + (numTraversals + 1));
                             requestedRewards++;
+                            numMissedRewards = 0;
                         }
 
                         if (transform.position.z >= rewardLocation && automaticReward==1)
@@ -290,6 +335,7 @@ public class PlayerController_JitterCues1 : MonoBehaviour
                             rewardFlag = 1;
                             Debug.Log("Automatic reward trial " + (numTraversals + 1));
                             freeRewards++;
+                            numMissedRewards = 0;
                         }
                     }
 
@@ -297,6 +343,7 @@ public class PlayerController_JitterCues1 : MonoBehaviour
                     {
                         Debug.Log("Missed reward trial " + (numTraversals + 1));
                         missedRewards++;
+                        numMissedRewards++;
                         rewardFlag = 1;
                     }
                 }
@@ -348,6 +395,7 @@ public class PlayerController_JitterCues1 : MonoBehaviour
                     if (allowLapEnd == true)
                     {
                         numTraversals++;
+                        numTraversalsThisBlock++;
                         rewardFlag = 0;
                         Debug.Log("Ending lap: numTraversals = " + numTraversals + " / numTrialsTotal = " + numRegularLaps);
                         Debug.Log("Reward summary: requested " + requestedRewards + ", automatic " + freeRewards + ", out of nlaps " + numTraversals);
@@ -526,9 +574,9 @@ public class PlayerController_JitterCues1 : MonoBehaviour
 
     void DisplayLickingAccuracy()
     {
-        Debug.Log("anticipatoryLicks " + anticipatoryLicks + " rewardLicks " + rewardLicks + " consummatoryLicks " + consummatoryLicks + " numLicks " + numLicks);
+        //Debug.Log("anticipatoryLicks " + anticipatoryLicks + " rewardLicks " + rewardLicks + " consummatoryLicks " + consummatoryLicks + " numLicks " + numLicks);
         Debug.Log("anticipatoryLickRate " + anticipatoryLickRate + " rewardLickRate " + rewardLickRate + " consummatoryLickRate " + consummatoryLickRate);
-        Debug.Log("On trial " + (numTraversals + 1) + " probablyGoodLickRate = " + probablyGoodLickRate);
+        //Debug.Log("On trial " + (numTraversals + 1) + " probablyGoodLickRate = " + probablyGoodLickRate);
     }
 
     void SaveTrialListToFile()
