@@ -24,14 +24,13 @@ public class PlayerController_JitterCues1 : MonoBehaviour
 
     public int trackNumA = 1;
     public int trackNumB = 2;
+    private int[] trackNums = new int[2];
     public float trackLenA = 450.0f;
     public float trackLenB = 400.0f;
-    //private float[] trackLens = {450.0f, 400.0f, 350.0f, 375.0f};
-    private float[] trackOffsetsX = { 0.0f, 200.0f, 400.0f, 600.0f};
-    public float trackOffsetA = 0.0f;
-    public float trackOffsetB = 200.0f;
-    public float rewardZoneA = 0.75f;
-    public float rewardZoneB = 0.5f;
+    private float[] allTrackLens = {450.0f, 400.0f, 350.0f, 375.0f, 425.0f, 365.0f};
+    private float[] allTrackOffsetsX = { 0.0f, 200.0f, 400.0f, 600.0f, 800.0f, 1000.0f};
+    public float trackOffsetA, trackOffsetB, rewardZoneA, rewardZoneB;
+    private float[] allRewardZones = { 0.75f, 0.5f, 0.4f, 0.85f, 0.35f, 0.7f};
     public float rewardZoneSizeTotal = 25.0f;
     private float rewardLocation, rewardZoneStart, rewardZoneEnd;
     [HideInInspector] private float[] rewardZones = new float[2];
@@ -97,14 +96,27 @@ public class PlayerController_JitterCues1 : MonoBehaviour
     private StreamWriter sw_lick, sw_pos, sw_trial, sw_reward, sw_startstop, sw_par, sw_trialList, sw_trialOrder, sw_pos_header;
     private bool wrotePosHeader = false;
 
+    private bool sentBncPosLap = false;
+    private float sendBncPosLapAt = 100.0f;
+    private float lastZ = -1000.0f;
+
     void Awake()
     {
         Debug.Log("player controller wake");
         //Probably going to handle some stuff here so don't get rid of it or move things forward in other scripts
+        trackNums[0] = trackNumA; trackNums[1] = trackNumB;
 
-        trackOffsets[0] = trackOffsetA; trackOffsets[1] = trackOffsetB;
-        trackLens[0] = trackLenA; trackLens[1] = trackLenB;
-        rewardZones[0] = rewardZoneA; rewardZones[1] = rewardZoneB;
+        //trackOffsets[0] = trackOffsetA; trackOffsets[1] = trackOffsetB;
+        trackOffsets[0] = allTrackOffsetsX[trackNumA - 1]; trackOffsets[1] = allTrackOffsetsX[trackNumB - 1];
+        //trackLens[0] = trackLenA; trackLens[1] = trackLenB;
+        trackLens[0] = allTrackLens[trackNumA - 1]; trackLens[1] = allTrackLens[trackNumB - 1];
+        //rewardZones[0] = rewardZoneA; rewardZones[1] = rewardZoneB;
+        rewardZones[0] = allRewardZones[trackNumA - 1]; rewardZones[1] = allRewardZones[trackNumB - 1];
+
+        trackLenA = allTrackLens[trackNumA - 1];
+        trackLenB = allTrackLens[trackNumB - 1];
+        rewardZoneA = allRewardZones[trackNumA - 1];
+        rewardZoneB = allRewardZones[trackNumB - 1];
     }
     
     void Start()
@@ -137,7 +149,6 @@ public class PlayerController_JitterCues1 : MonoBehaviour
         {
             doneDarkLapsBefore = true;
         }
-
 
         missesBeforeReminder = new List<int>();
         rewardsAtStart = new List<int>();
@@ -216,6 +227,7 @@ public class PlayerController_JitterCues1 : MonoBehaviour
 
         lastBlockNum = -1;
         cmdWrite = 1;
+        lastZ = -1000.0f;
     }
 
     // Update is called once per frame
@@ -281,6 +293,23 @@ public class PlayerController_JitterCues1 : MonoBehaviour
                     }
                 }
             }
+            
+            if (transform.position.z < (lastZ-100.0f))
+            {
+                sentBncPosLap = false;
+            }
+            lastZ = transform.position.z;
+            if (cmdWrite == 1)
+            {
+                if (sentBncPosLap == false)
+                {
+                    if (transform.position.z >= sendBncPosLapAt)
+                    {
+                        cmdWrite = 7;
+                        sentBncPosLap = true;
+                    }
+                }
+            }
 
             // Update position, etc.
             CallArduinoUpdateMovement();
@@ -298,7 +327,7 @@ public class PlayerController_JitterCues1 : MonoBehaviour
                     lastPosition.z = 0.0f;
                     numTraversalsDarkBefore++;
                     if (numTraversalsDarkBefore >= numDarkLapsBefore) { doneDarkLapsBefore = true; }
-                    Debug.Log("Done post dark lap " + numTraversalsDarkBefore + " / " + numDarkLapsBefore);
+                    Debug.Log("Done pre dark lap " + numTraversalsDarkBefore + " / " + numDarkLapsBefore);
                 }
 
                 transform.position = lastPosition;
@@ -393,16 +422,16 @@ public class PlayerController_JitterCues1 : MonoBehaviour
 
                     if (UseTimeout == true)
                     {
+                        float timeNow = Time.realtimeSinceStartup;
                         if (haveSetTimeoutEnd == false)
                         {
                             float timeoutDelay = UnityEngine.Random.Range(timeoutMin, timeoutMax);
                             timeoutOver = Time.realtimeSinceStartup + timeoutDelay;
-                            if (numTraversals + 1 == numRegularLaps) { timeoutOver = Time.realtimeSinceStartup - 1.0f; } // Don't run a delay on the last lap, it'll get confusing with dark running
+                            if (numTraversals + 1 == numRegularLaps) { timeoutOver = timeNow +0.01f; } // Don't run a real delay, but have a frame in blackout on last lap, it'll get confusing with dark running
                             haveSetTimeoutEnd = true;
                             //Debug.Log("Time out for " + timeoutDelay + "s" + "; This was at " + System.DateTime.Now);
                         }
-
-                        float timeNow = Time.realtimeSinceStartup;
+                        
                         allowLapEnd = false;
                         if (timeNow <= timeoutOver)
                         {
@@ -420,6 +449,7 @@ public class PlayerController_JitterCues1 : MonoBehaviour
                     if (allowLapEnd == true)
                     {
                         numTraversals++;
+                        //sentBncPosLap = false;
                         numTraversalsThisBlock++;
                         rewardFlag = 0;
                         Debug.Log("Ending lap: numTraversals = " + numTraversals + " / numTrialsTotal = " + numRegularLaps);
@@ -443,12 +473,12 @@ public class PlayerController_JitterCues1 : MonoBehaviour
                         {
                             Debug.Log("This was the last lap, numTraversals = " + numTraversals);
                             doneRegularLaps = true;
-                            numTraversals = numTraversals - 1; // for easier indexing, will go over on last frame of last lap
+                            //numTraversals = numTraversals; // for easier indexing, will go over on last frame of last lap
                         }
 
                         if (saveData)
                         {
-                            sw_trial.Write(Time.realtimeSinceStartup + "\t" + numTraversals + "\t" + Time.frameCount + "\n");
+                            sw_trial.Write(Time.realtimeSinceStartup + "\t" + (numTraversals-1) + "\t" + Time.frameCount + "\n");
                         }
 
                         DisplayLickingAccuracy();
@@ -478,6 +508,7 @@ public class PlayerController_JitterCues1 : MonoBehaviour
                     if (lastPosition.z >= darkTrackLength)
                     {
                         numTraversalsDarkAfter++;
+                        Debug.Log("Done post dark lap " + numTraversalsDarkAfter + " / " + numDarkLapsAfter);
                         if (numTraversalsDarkAfter >= numDarkLapsAfter)
                         {
                             //End session
@@ -488,7 +519,6 @@ public class PlayerController_JitterCues1 : MonoBehaviour
                         {
                             lastPosition.z = 0.0f;
                         }
-                        Debug.Log("Done post dark lap " + numTraversalsDarkAfter + " / " + numDarkLapsAfter);
                     }
                 }
                 transform.position = lastPosition;
@@ -516,6 +546,7 @@ public class PlayerController_JitterCues1 : MonoBehaviour
     {
         missedArdFrame = 0;
         //Debug.Log("cmdWrite " + cmdWrite);
+        if (cmdWrite == 7) { Debug.Log("sent a 7!"); }
         arduinoHandler.sendCmdReadReply(cmdWrite);
         lickPinValue = arduinoHandler.lickPinValue;
         rotaryTicks = arduinoHandler.rotaryTicks;
@@ -558,18 +589,23 @@ public class PlayerController_JitterCues1 : MonoBehaviour
         {
             try
             {
+                int blackoutLap = 0;
+                if ((transform.position.x < (darkTrackOffset_x + 1.0f)) && (transform.position.x > (darkTrackOffset_x - 1.0f)))
+                { 
+                    blackoutLap = 1;
+                }
                 int numTraversalsWrite = numTraversals;
                 if (doneDarkLapsBefore == false) { numTraversalsWrite = numTraversalsDarkBefore - numDarkLapsBefore; }
-                if (doneRegularLaps == true) { numTraversalsWrite = numTraversalsDarkAfter + (numRegularLaps-1); };
+                if (doneRegularLaps == true) { numTraversalsWrite = numTraversalsDarkAfter + (numRegularLaps); };
                 sw_pos.Write(Time.frameCount + "\t" + transform.position.z + "\t" + Time.realtimeSinceStartup + "\t" + syncPinState + "\t" +
                                 pulseMarker + "\t" + startStopPinState + "\t" + delta_z + "\t" + lickPinValue + "\t" +
-                                rewardFlag + "\t" + numTraversalsWrite + "\t" + delta_T + "\t" + missedArdFrame + "\n");
+                                rewardFlag + "\t" + numTraversalsWrite + "\t" + delta_T + "\t" + missedArdFrame + "\t" + blackoutLap + "\n");
 
                 if (wrotePosHeader == false)
                 {
-                    sw_pos_header.Write("frameCount" + "\t" + "transform.position.z" + "\t" + "Time.realtimeSinceStartup" + "\t" + "syncPinState" + "\t" +
+                    sw_pos_header.Write("frameCount" + "\t" + "transform_position_z" + "\t" + "Time_realtimeSinceStartup" + "\t" + "syncPinState" + "\t" +
                                 "pulseMarker" + "\t" + "startStopPinState" + "\t" + "delta_z" + "\t" + "lickPinValue" + "\t" +
-                                "rewardFlag" + "\t" + "numTraversals" + "\t" + "delta_T" + "\t" + "missedArdFrame" + "\n");
+                                "rewardFlag" + "\t" + "numTraversals" + "\t" + "delta_T" + "\t" + "missedArdFrame" + "\t" + "blackoutLap" + "\n");
                     wrotePosHeader = true;
                 }
             }
@@ -594,40 +630,45 @@ public class PlayerController_JitterCues1 : MonoBehaviour
         sw_par.Write("session" + "\t" + session + "\n");
         sw_par.Write("trackName" + "\t" + trackName + "\n");
         sw_par.Write("rewardZoneSizeTotal" + "\t" + rewardZoneSizeTotal + "\n");
+        sw_par.Write("lickThresh" + "\t" + lickThresh + "\n");
         sw_par.Write("blackoutBoxPosition" + "\t" + blackoutBoxPosition + "\n");
         sw_par.Write("UseTimeout" + "\t" + UseTimeout + "\n");
         sw_par.Write("TimeoutMinimum" + "\t" + timeoutMin + "\n");
         sw_par.Write("TimeoutMaximum" + "\t" + timeoutMax + "\n");
         sw_par.Write("numDarkLapsBefore" + "\t" + numDarkLapsBefore + "\n");
         sw_par.Write("numLapsMain" + "\t" + trialContext.Count + "\n");
-        sw_par.Write("numDarkLapsBefore" + "\t" + numDarkLapsAfter + "\n");
+        sw_par.Write("numDarkLapsAfter" + "\t" + numDarkLapsAfter + "\n");
+        sw_par.Write("trackNumA" + "\t" + trackNumA + "\n");
+        sw_par.Write("trackNumB" + "\t" + trackNumB + "\n");
         sw_par.Write("trackLenA" + "\t" + trackLenA + "\n");
         sw_par.Write("trackLenB" + "\t" + trackLenB + "\n");
-        sw_par.Write("rewardZoneA" + "\t" + trackLenA + "\n");
-        sw_par.Write("rewardZoneB" + "\t" + trackLenB + "\n");
+        sw_par.Write("rewardZoneA" + "\t" + rewardZoneA + "\n");
+        sw_par.Write("rewardZoneB" + "\t" + rewardZoneB + "\n");
+        sw_par.Write("startOffsetMin" + "\t" + startOffsetMin + "\n");
+        sw_par.Write("startOffsetMax" + "\t" + startOffsetMax + "\n");
         for (int i = 0; i < trialNumbersA.Count; i++)
         {
-            sw_par.Write("trialNumbersA" + i + "\t" + trialNumbersA[i]);
+            sw_par.Write("trialNumbersA" + i + "\t" + trialNumbersA[i] + "\n");
         }
         for (int i = 0; i < trialNumbersB.Count; i++)
         {
-            sw_par.Write("trialNumbersB" + i + "\t" + trialNumbersB[i]);
+            sw_par.Write("trialNumbersB" + i + "\t" + trialNumbersB[i] + "\n");
         }
         for (int i = 0; i < rewardsAtStartA.Count; i++)
         {
-            sw_par.Write("rewardsAtStartA" + i + "\t" + rewardsAtStartA[i]);
+            sw_par.Write("rewardsAtStartA" + i + "\t" + rewardsAtStartA[i] + "\n");
         }
         for (int i = 0; i < rewardsAtStartB.Count; i++)
         {
-            sw_par.Write("rewardsAtStartB" + i + "\t" + rewardsAtStartB[i]);
+            sw_par.Write("rewardsAtStartB" + i + "\t" + rewardsAtStartB[i] + "\n");
         }
         for (int i = 0; i < missesBeforeReminderA.Count; i++)
         {
-            sw_par.Write("missesBeforeReminderA" + i + "\t" + missesBeforeReminderA[i]);
+            sw_par.Write("missesBeforeReminderA" + i + "\t" + missesBeforeReminderA[i] + "\n");
         }
         for (int i = 0; i < missesBeforeReminderB.Count; i++)
         {
-            sw_par.Write("missesBeforeReminderB" + i + "\t" + missesBeforeReminderB[i]);
+            sw_par.Write("missesBeforeReminderB" + i + "\t" + missesBeforeReminderB[i] + "\n");
         }
     }
 
@@ -673,7 +714,7 @@ public class PlayerController_JitterCues1 : MonoBehaviour
         for (int trialI = 0; trialI < trialNum.Count; trialI++)
         {
             int ts = 0; if (trialStable[trialI] == true) { ts = 1; }
-            string writeStr = trialI + "\t" + ts + "\t" + trialContext[trialI] + "\t";
+            string writeStr = trialI + "\t" + ts + "\t" + trialContext[trialI];
             int[] objectsH = trialObjectNums[trialI];
             float[] positionsH = trialObjectPositions[trialI];
             for (int objI = 0; objI < 5; objI++)
