@@ -349,8 +349,8 @@ public class PlayerController_ShiftingRewards : MonoBehaviour
             {
 				haveRel = true;
             }
-
 		}
+
 		rewardPosition = trackLen * rewardLocRel;
 		rewardZoneStart = rewardPosition - rewardZoneBuffer;
 		rewardZoneEnd = rewardPosition + rewardZoneBuffer;
@@ -385,22 +385,21 @@ public class PlayerController_ShiftingRewards : MonoBehaviour
 			trialTimesFile = localDirString + "_trial_times.txt";
 			//serverTrialTimesFile = serverDirectory + "\\" + mouse + "\\" + session + "_trial_times.txt";
 			serverTrialTimesFile = serverDirString + "_trial_times.txt";
-			rewardFile = localDirectory + "\\" + mouse + "\\" + session + "_reward.txt";
+			rewardFile = localDirString + "_reward.txt";
 			serverRewardFile = serverDirectory + "\\" + mouse + "\\" + session + "_reward.txt";
-			positionFile = localDirectory + "\\" + mouse + "\\" + session + "_position.txt";
-			serverPositionFile = serverDirectory + "\\" + mouse + "\\" + session + "_position.txt";
-			lickFile = localDirectory + "\\" + mouse + "\\" + session + "_licks.txt";
-			serverLickFile = serverDirectory + "\\" + mouse + "\\" + session + "_licks.txt";
-			startStopFile = localDirectory + "\\" + mouse + "\\" + session + "_startStop.txt";
-			serverStartStopFile = serverDirectory + "\\" + mouse + "\\" + session + "_startStop.txt";
-			paramsTwoFile = localDirectory + "\\" + mouse + "\\" + session + "_params2.txt";
-			serverParamsTwoFile = serverDirectory + "\\" + mouse + "\\" + session + "_params2.txt";
-			trialListFile = localDirectory + "\\" + mouse + "\\" + session + "_trialList.txt";
-			serverTrialListFile = serverDirectory + "\\" + mouse + "\\" + session + "_trialList.txt";
+			positionFile = localDirString + "_position.txt";
+			serverPositionFile = serverDirString + "_position.txt";
+			lickFile = localDirString + "_licks.txt";
+			serverLickFile = serverDirString + "_licks.txt";
+			startStopFile = localDirString + "_startStop.txt";
+			serverStartStopFile = serverDirString + "_startStop.txt";
+			paramsTwoFile = localDirString + "_params2.txt";
+			serverParamsTwoFile = serverDirString + "_params2.txt";
+			trialListFile = localDirString + "_trialList.txt";
+			serverTrialListFile = serverDirString + "_trialList.txt";
 
-			positionHeaderFile = localDirectory + "\\" + mouse + "\\" + session + "_positionHeader.txt";
-			serverPositionHeaderFile = serverDirectory + "\\" + mouse + "\\" + session + "_positionHeader.txt";
-
+			positionHeaderFile = localDirString + "_positionHeader.txt";
+			serverPositionHeaderFile = serverDirString + "_positionHeader.txt";
 
 			if (File.Exists(positionFile))
 			{
@@ -424,20 +423,7 @@ public class PlayerController_ShiftingRewards : MonoBehaviour
 
 			sw_pos_header = new StreamWriter(positionHeaderFile, true);
 
-			// Save some params
-			sw_par.Write("trackUse" + "\t" + trackUse + "\n");
-			sw_par.Write("trackLen" + "\t" + trackLen + "\n");
-			sw_par.Write("rewardLocRel" + "\t" + rewardLocRel + "\n");
-			sw_par.Write("rewardLocInt" + "\t" + rewardLocInt + "\n");
-			sw_par.Write("rewardZoneBuffer" + "\t" + rewardZoneBuffer + "\n");
-			sw_par.Write("rewardMissesBeforeReminder" + "\t" + rewardMissesBeforeReminder + "\n");
-			sw_par.Write("requireLickForReward" + "\t" + requireLickForReward + "\n");
-			sw_par.Write("blackoutBoxPosition" + "\t" + blackoutBoxPosition + "\n");
-			sw_par.Write("UseTimeout" + "\t" + UseTimeout + "\n");
-			sw_par.Write("TimeoutMinimum" + "\t" + TimeoutMinimum + "\n");
-			sw_par.Write("TimeoutMaximum" + "\t" + TimeoutMaximum + "\n");
-			sw_par.Write("BlackRunningSeconds" + "\t" + BlackRunningSeconds + "\n");
-			// Need to flesh this out...
+			SaveSessionParameters();
 		}
 		else
 		{
@@ -512,7 +498,6 @@ public class PlayerController_ShiftingRewards : MonoBehaviour
 					{
 						lickPinValue = 1023;
 					}
-
 
 					//if (lickPinValue > 500 & lickFlag == 1)
 					if (lickPinValue > lickValThresh)
@@ -664,7 +649,7 @@ public class PlayerController_ShiftingRewards : MonoBehaviour
 					Debug.Log("Auto reward delivery " + " Trial= " + (numTraversals + 1) + "numTraversalsThisLocation= " + numTraversalsThisLocation + ", automaticReward= " + automaticRewardFlag + ", num missed rewards= " + numMissedRewards + ", rewardsLickedThisLocation= " + rewardsLickedThisLocation);
 					if (saveData)
 					{
-						sw_reward.Write(Time.realtimeSinceStartup + "\t" + rewardPosition + "\t" + numTraversals + "\t" + rewardZoneAlpha + "\t" + 1 + "\t" + 0 + "\n");
+						sw_reward.Write(Time.realtimeSinceStartup + "\t" + rewardCount + "\t" + rewardPosition + "\t" + numTraversals + "\t" + rewardZoneAlpha + "\t" + 1 + "\t" + 0 + "\n");
 					}
 
 				}
@@ -1077,20 +1062,23 @@ public class PlayerController_ShiftingRewards : MonoBehaviour
 		}
 	}
 
-	void ConfigurePins()
-	{
-		if (ArdUse == ArduinoUse.Uniduino)
-		{
-			//arduino.pinMode(rewardPin, PinMode.OUTPUT);
-			//arduino.pinMode(stopPin, PinMode.OUTPUT);
-			Debug.Log("Pins configured (player controller)");
-		}
-		else
-		{
-			Debug.Log("Using simulated running");
-		}
+	void SaveSessionParameters()
+    {
+		// Save some params
+		sw_par.Write("trackUse" + "\t" + trackUse + "\n");
+		sw_par.Write("trackLen" + "\t" + trackLen + "\n");
+		sw_par.Write("lickValThresh" + "\t" + lickValThresh + "\n");
+		//sw_par.Write("rewardLocRel" + "\t" + rewardLocRel + "\n");
+		//sw_par.Write("rewardLocInt" + "\t" + rewardLocInt + "\n");
+		sw_par.Write("rewardZoneBuffer" + "\t" + rewardZoneBuffer + "\n");
+		sw_par.Write("rewardMissesBeforeReminder" + "\t" + rewardMissesBeforeReminder + "\n");
+		sw_par.Write("requireLickForReward" + "\t" + requireLickForReward + "\n");
+		sw_par.Write("blackoutBoxPosition" + "\t" + blackoutBoxPosition + "\n");
+		sw_par.Write("UseTimeout" + "\t" + UseTimeout + "\n");
+		sw_par.Write("TimeoutMinimum" + "\t" + TimeoutMinimum + "\n");
+		sw_par.Write("TimeoutMaximum" + "\t" + TimeoutMaximum + "\n");
+		sw_par.Write("BlackRunningSeconds" + "\t" + BlackRunningSeconds + "\n");
 	}
-
 	private void connect(string serialPortName, Int32 baudRate, bool autoStart, int delay)
 	{
 		_serialPort = new SerialPort(serialPortName, baudRate);
@@ -1115,32 +1103,6 @@ public class PlayerController_ShiftingRewards : MonoBehaviour
 		}
 	}
 
-	/*
-	private void connectRwd(string serialPortName, Int32 baudRate, bool autoStart, int delay)
-	{
-		_serialPortReward = new SerialPort(serialPortName, baudRate);
-		//_serialPort = Win32SerialPort.CreateInstance();
-
-		_serialPortReward.DtrEnable = true; // win32 hack to try to get DataReceived event to fire
-		_serialPortReward.RtsEnable = true;
-		_serialPortReward.PortName = serialPortName;
-		_serialPortReward.BaudRate = baudRate;
-
-		_serialPortReward.DataBits = 8;
-		_serialPortReward.Parity = Parity.None;
-		_serialPortReward.StopBits = StopBits.One;
-		_serialPortReward.ReadTimeout = 5; // since on windows we *cannot* have a separate read thread
-		_serialPortReward.WriteTimeout = 1000;
-
-
-		if (autoStart)
-		{
-			this.delay = delay;
-			this.OpenRwd();
-		}
-	}
-	*/
-
 	private void Open()
 	{
 		_serialPort.Open();
@@ -1151,25 +1113,10 @@ public class PlayerController_ShiftingRewards : MonoBehaviour
 		}
 	}
 
-	/*
-	private void OpenRwd()
-	{
-		_serialPortReward.Open();
-
-		if (_serialPortReward.IsOpen)
-		{
-			Thread.Sleep(delay);
-		}
-	}
-	*/
-
 	private void Close()
 	{
 		if (_serialPort != null)
 			_serialPort.Close();
-
-		//if (_serialPortReward != null)
-		//	_serialPortReward.Close();
 	}
 
 	private void Disconnect()

@@ -20,21 +20,23 @@ public class SessionParams : MonoBehaviour {
 
     // reward params
     public bool lickForReward = false;
-	public float pReward = 0.0025f;
+	//public float pReward = 0.0025f;
 
     // session params
+	/*
     public int numTrialsTotal = 100;
 	public int numTrialsPerBlock = 10;
 	public int numReminderTrials = 1;
 	public int numReminderTrialsBegin = 30;
 	public int numReminderTrialsEnd = 20;
-
+	*/
 	// gain manip params
+	/*
 	public bool manipSession = false;
 	public int numGainTrials = 0;
 	public float endGain = 0.5f;
 	public float[] gains = new float[] {1};
-
+	*/
 	void Start () 
 	{
 
@@ -43,7 +45,7 @@ public class SessionParams : MonoBehaviour {
 
 		string trackName = UnityEngine.SceneManagement.SceneManager.GetActiveScene ().name;
 		trackName = trackName.Substring (0, trackName.Length);
-
+		/*
 		if (saveData) 
 		{
 			var sw = new StreamWriter (paramsFile, true);
@@ -56,6 +58,7 @@ public class SessionParams : MonoBehaviour {
 			sw.WriteLine ("NumReminderTrialsBegin\t" + numReminderTrialsBegin);
 			sw.Close ();
 		}
+		*/
 	}
 
 	void OnApplicationQuit() 

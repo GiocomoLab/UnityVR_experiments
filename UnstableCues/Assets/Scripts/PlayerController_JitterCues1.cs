@@ -100,6 +100,8 @@ public class PlayerController_JitterCues1 : MonoBehaviour
     private float sendBncPosLapAt = 100.0f;
     private float lastZ = -1000.0f;
 
+    private bool dispEnter = false;
+
     void Awake()
     {
         Debug.Log("player controller wake");
@@ -235,6 +237,12 @@ public class PlayerController_JitterCues1 : MonoBehaviour
     {
         if (Application.targetFrameRate != target)
             Application.targetFrameRate = target;
+
+        if (dispEnter == false)
+        {
+            Debug.Log("Hit Enter to start the session");
+            dispEnter = true;
+        }
 
         justTeleported = false; 
 
