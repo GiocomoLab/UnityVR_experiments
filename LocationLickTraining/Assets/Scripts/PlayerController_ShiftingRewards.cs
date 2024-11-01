@@ -59,9 +59,9 @@ public class PlayerController_ShiftingRewards : MonoBehaviour
 	public int numTraversals = 0;
 
 	private string lick_raw;
-	
+
 	private int numLicks = 0;
-	
+
 	private int rotaryTicks = 0;
 	private float speed = 0.0447f;
 	private int syncPinState;
@@ -83,8 +83,10 @@ public class PlayerController_ShiftingRewards : MonoBehaviour
 	private int totalRequestedRewards = 0;
 	private int rewardsLickedThisLocation = 0;
 	private int numTraversalsThisLocation = 0;
-	private float minRewardLocRel = 0.2f;
-	private float maxRewardLocRel = 0.95f;
+	private float minRewardLocRel = 0.1f;
+	private float maxRewardLocRel = 0.9f;
+	private int missedReward, gotAutomaticReward;
+	private float secondOldRewardPosition, minNewRewardDistance;
 	//private float minDisttoNewRewadRel; // use size of reward zone buffer
 
 	// for each trial's reward
@@ -193,7 +195,7 @@ public class PlayerController_ShiftingRewards : MonoBehaviour
 	private void Awake()
 	{
 		Debug.Log("wake");
-		if (!((trackUse == 1) || (trackUse == 2) || (trackUse == 3) || (trackUse == 4)) )
+		if (!((trackUse == 1) || (trackUse == 2) || (trackUse == 3) || (trackUse == 4)))
 		{
 			Debug.Log("Bad session day integer, quitting");
 			UnityEditor.EditorApplication.isPlaying = false;
@@ -231,7 +233,6 @@ public class PlayerController_ShiftingRewards : MonoBehaviour
 		// initialize arduino
 		if (ArdUse == ArduinoUse.Uniduino)
 		{
-			// initialize arduino
 			try
 			{
 				connect(thisPort, 115200, true, 10);
@@ -250,30 +251,8 @@ public class PlayerController_ShiftingRewards : MonoBehaviour
 
 		if (ArdUse == ArduinoUse.Uniduino)
 		{
-			Debug.Log("Attempting reward port communication");
-			try
-			{
-				//connectRwd(rewardPort, 115200, true, 10);
-				//Debug.Log("Connected to reward port");
-			}
-			catch
-			{
-				Debug.Log("failed to connect to reward port");
-			}
-		}
-		else
-		{
-			Debug.Log("skipping reward port");
-		}
-
-
-		if (ArdUse == ArduinoUse.Uniduino)
-		{
 			_serialPort.DiscardInBuffer();
 			_serialPort.DiscardOutBuffer();
-
-			//_serialPortReward.DiscardInBuffer();
-			//_serialPortReward.DiscardOutBuffer();
 		}
 
 		Debug.Log("end of wake");
@@ -340,33 +319,36 @@ public class PlayerController_ShiftingRewards : MonoBehaviour
 		lickForReward = paramsScript.lickForReward;
 
 		// Set reward boundaries
+		//minNewRewardDistance = rewardZoneBuffer * 3;
+		minNewRewardDistance = 50.0f;
 		var randomRel = new System.Random();
 		bool haveRel = false;
 		while (haveRel == false)
-        {
+		{
 			rewardLocRel = (float)randomRel.NextDouble();
 			if (rewardLocRel >= minRewardLocRel & rewardLocRel <= maxRewardLocRel)
-            {
+			{
 				haveRel = true;
-            }
-
+			}
 		}
+
 		rewardPosition = trackLen * rewardLocRel;
+		secondOldRewardPosition = rewardPosition;
 		rewardZoneStart = rewardPosition - rewardZoneBuffer;
 		rewardZoneEnd = rewardPosition + rewardZoneBuffer;
 		if ((freeRewardsEachLocation > 0) || (requireLickForReward == false))
-		{ 
+		{
 			automaticRewardFlag = 1;
-        }
+		}
 		Debug.Log("trackLen = " + trackLen + ", rewardLocRel = " + rewardLocRel + ", rewardPosition = " + rewardPosition);
 
 		rwMarkerPos = new Vector3(trackOffset_x, -18f, rewardPosition);
 		rewardMarker.transform.position = rwMarkerPos;
 		visRwZoneHeight = -25f;
 		if (useVisibleRewardZone == true)
-        {
+		{
 			visRwZoneHeight = 0.5f;
-        }
+		}
 		visRwZonePos = new Vector3(trackOffset_x, visRwZoneHeight, rewardPosition);
 		visibleRewardZone.transform.position = visRwZonePos;
 
@@ -385,31 +367,30 @@ public class PlayerController_ShiftingRewards : MonoBehaviour
 			trialTimesFile = localDirString + "_trial_times.txt";
 			//serverTrialTimesFile = serverDirectory + "\\" + mouse + "\\" + session + "_trial_times.txt";
 			serverTrialTimesFile = serverDirString + "_trial_times.txt";
-			rewardFile = localDirectory + "\\" + mouse + "\\" + session + "_reward.txt";
+			rewardFile = localDirString + "_reward.txt";
 			serverRewardFile = serverDirectory + "\\" + mouse + "\\" + session + "_reward.txt";
-			positionFile = localDirectory + "\\" + mouse + "\\" + session + "_position.txt";
-			serverPositionFile = serverDirectory + "\\" + mouse + "\\" + session + "_position.txt";
-			lickFile = localDirectory + "\\" + mouse + "\\" + session + "_licks.txt";
-			serverLickFile = serverDirectory + "\\" + mouse + "\\" + session + "_licks.txt";
-			startStopFile = localDirectory + "\\" + mouse + "\\" + session + "_startStop.txt";
-			serverStartStopFile = serverDirectory + "\\" + mouse + "\\" + session + "_startStop.txt";
-			paramsTwoFile = localDirectory + "\\" + mouse + "\\" + session + "_params2.txt";
-			serverParamsTwoFile = serverDirectory + "\\" + mouse + "\\" + session + "_params2.txt";
-			trialListFile = localDirectory + "\\" + mouse + "\\" + session + "_trialList.txt";
-			serverTrialListFile = serverDirectory + "\\" + mouse + "\\" + session + "_trialList.txt";
+			positionFile = localDirString + "_position.txt";
+			serverPositionFile = serverDirString + "_position.txt";
+			lickFile = localDirString + "_licks.txt";
+			serverLickFile = serverDirString + "_licks.txt";
+			startStopFile = localDirString + "_startStop.txt";
+			serverStartStopFile = serverDirString + "_startStop.txt";
+			paramsTwoFile = localDirString + "_params2.txt";
+			serverParamsTwoFile = serverDirString + "_params2.txt";
+			trialListFile = localDirString + "_trialList.txt";
+			serverTrialListFile = serverDirString + "_trialList.txt";
 
-			positionHeaderFile = localDirectory + "\\" + mouse + "\\" + session + "_positionHeader.txt";
-			serverPositionHeaderFile = serverDirectory + "\\" + mouse + "\\" + session + "_positionHeader.txt";
-
+			positionHeaderFile = localDirString + "_positionHeader.txt";
+			serverPositionHeaderFile = serverDirString + "_positionHeader.txt";
 
 			if (File.Exists(positionFile))
 			{
 				Debug.Log("This file already exists!");
 				int numLines = File.ReadAllLines(positionFile).Length;
 				Debug.Log("It has " + numLines + " lines in it");
-				
+
 				if (numLines > 1)
-                {
+				{
 					UnityEditor.EditorApplication.isPlaying = false;
 				}
 			}
@@ -424,20 +405,7 @@ public class PlayerController_ShiftingRewards : MonoBehaviour
 
 			sw_pos_header = new StreamWriter(positionHeaderFile, true);
 
-			// Save some params
-			sw_par.Write("trackUse" + "\t" + trackUse + "\n");
-			sw_par.Write("trackLen" + "\t" + trackLen + "\n");
-			sw_par.Write("rewardLocRel" + "\t" + rewardLocRel + "\n");
-			sw_par.Write("rewardLocInt" + "\t" + rewardLocInt + "\n");
-			sw_par.Write("rewardZoneBuffer" + "\t" + rewardZoneBuffer + "\n");
-			sw_par.Write("rewardMissesBeforeReminder" + "\t" + rewardMissesBeforeReminder + "\n");
-			sw_par.Write("requireLickForReward" + "\t" + requireLickForReward + "\n");
-			sw_par.Write("blackoutBoxPosition" + "\t" + blackoutBoxPosition + "\n");
-			sw_par.Write("UseTimeout" + "\t" + UseTimeout + "\n");
-			sw_par.Write("TimeoutMinimum" + "\t" + TimeoutMinimum + "\n");
-			sw_par.Write("TimeoutMaximum" + "\t" + TimeoutMaximum + "\n");
-			sw_par.Write("BlackRunningSeconds" + "\t" + BlackRunningSeconds + "\n");
-			// Need to flesh this out...
+			SaveSessionParameters();
 		}
 		else
 		{
@@ -512,7 +480,6 @@ public class PlayerController_ShiftingRewards : MonoBehaviour
 					{
 						lickPinValue = 1023;
 					}
-
 
 					//if (lickPinValue > 500 & lickFlag == 1)
 					if (lickPinValue > lickValThresh)
@@ -626,8 +593,9 @@ public class PlayerController_ShiftingRewards : MonoBehaviour
 			}
 
 			// Reward
+			missedReward = 0; gotAutomaticReward = 0;
 			if (transform.position.z > rewardZoneStart & transform.position.z < rewardZoneEnd & rewardFlag == 0)
-            {
+			{
 				if (lickFlag == 1)
 				{
 					rewardFlag = 1;
@@ -647,10 +615,12 @@ public class PlayerController_ShiftingRewards : MonoBehaviour
 
 					if (saveData)
 					{
-						sw_reward.Write(Time.realtimeSinceStartup + "\t" + rewardPosition + "\t" + numTraversals + "\t" + rewardZoneAlpha + "\t" + 0 + "\t" + 0 + "\n");
+						//sw_reward.Write(Time.realtimeSinceStartup + "\t" + rewardCount + "\t" + rewardPosition + "\t" + numTraversals + "\t" + rewardZoneAlpha + "\t" + 0 + "\t" + 0 + "\n"); //0 0 licked for reward
+						//sw_reward.Write(Time.realtimeSinceStartup + "\t" + rewardCount + "\t" + rewardPosition + "\t" + numTraversals + "\t" + rewardZoneAlpha + "\t" + gotAutomaticReward + "\t" + missedReward + "\n"); //0 0 licked for reward
+						WriteRewardFile();
 					}
 				}
-				
+
 				// automatic reward
 				if (automaticRewardFlag == 1 & transform.position.z > rewardPosition)
 				{
@@ -661,14 +631,17 @@ public class PlayerController_ShiftingRewards : MonoBehaviour
 					rewardCount += 1;
 
 					// update debug log
+					gotAutomaticReward = 1;
 					Debug.Log("Auto reward delivery " + " Trial= " + (numTraversals + 1) + "numTraversalsThisLocation= " + numTraversalsThisLocation + ", automaticReward= " + automaticRewardFlag + ", num missed rewards= " + numMissedRewards + ", rewardsLickedThisLocation= " + rewardsLickedThisLocation);
 					if (saveData)
 					{
-						sw_reward.Write(Time.realtimeSinceStartup + "\t" + rewardPosition + "\t" + numTraversals + "\t" + rewardZoneAlpha + "\t" + 1 + "\t" + 0 + "\n");
+						//sw_reward.Write(Time.realtimeSinceStartup + "\t" + rewardCount + "\t" + rewardPosition + "\t" + numTraversals + "\t" + rewardZoneAlpha + "\t" + 1 + "\t" + 0 + "\n");  //1 0 auto matic reward
+						//sw_reward.Write(Time.realtimeSinceStartup + "\t" + rewardCount + "\t" + rewardPosition + "\t" + numTraversals + "\t" + rewardZoneAlpha + "\t" + gotAutomaticReward + "\t" + missedReward + "\n")
+						WriteRewardFile();
 					}
 
 				}
-            }
+			}
 
 			// missed reward
 			if (automaticRewardFlag == 0 & transform.position.z > rewardZoneEnd & rewardFlag == 0)
@@ -681,11 +654,14 @@ public class PlayerController_ShiftingRewards : MonoBehaviour
 				// update debug log 
 				Debug.Log("Missed Reward, " + " Trial= " + (numTraversals + 1) + "numTraversalsThisLocation= " + numTraversalsThisLocation + ", automaticReward= " + automaticRewardFlag + ", num missed rewards= " + numMissedRewards + ", rewardsLickedThisLocation= " + rewardsLickedThisLocation);
 				Debug.Log("Requested " + totalRequestedRewards + " out of " + totalNonAutoRewards);
+				missedReward = 1;
 				if (saveData)
 				{
-					sw_reward.Write(Time.realtimeSinceStartup + "\t" + rewardCount + "\t" + rewardPosition + "\t" + numTraversals + "\t" + rewardZoneAlpha + "\t" + 0 + "\t" + 1 + "\n");
+					//sw_reward.Write(Time.realtimeSinceStartup + "\t" + rewardCount + "\t" + rewardPosition + "\t" + numTraversals + "\t" + rewardZoneAlpha + "\t" + 0 + "\t" + 1 + "\n"); //0 1 missed reward
+					WriteRewardFile();
+					//sw_reward.Write(Time.realtimeSinceStartup + "\t" + rewardCount + "\t" + rewardPosition + "\t" + numTraversals + "\t" + rewardZoneAlpha + "\t" + gotAutomaticReward + "\t" + missedReward + "\n");
 				}
-				
+
 				/*
 				if (numMissedRewards >= rewardMissesBeforeReminder)
 				{
@@ -735,7 +711,7 @@ public class PlayerController_ShiftingRewards : MonoBehaviour
 					if (haveSetTimeoutEnd == false)
 					{
 						//if ((numTraversals >= minTrialsTotal & rewardsLickedThisLocation >= rewardsGetForNewLocation) || (numTraversals >= maxTrialsTotal)) // end session conditions
-						if ( ((numTraversals >= minTrialsTotal) & (rewardsLickedThisLocation >= rewardsGetForNewLocation)) || ((numTraversals >= minTrialsTotal) & (numTraversals >= maxTrialsTotal)) || ((numTraversals >= minTrialsTotal) & (newRewardLocation == true) & ((maxTrialsTotal - numTraversals) < minTrialsPerLocation)))
+						if (((numTraversals >= minTrialsTotal) & (rewardsLickedThisLocation >= rewardsGetForNewLocation)) || ((numTraversals >= minTrialsTotal) & (numTraversals >= maxTrialsTotal)) || ((numTraversals >= minTrialsTotal) & (newRewardLocation == true) & ((maxTrialsTotal - numTraversals) < minTrialsPerLocation)))
 						{
 							timeoutDelay = BlackRunningSeconds;
 							Debug.Log("starting dark running");
@@ -751,7 +727,7 @@ public class PlayerController_ShiftingRewards : MonoBehaviour
 						timeoutOver = Time.realtimeSinceStartup + timeoutDelay;
 						haveSetTimeoutEnd = true;
 						Debug.Log("Time out for " + timeoutDelay + "s" + " at " + System.DateTime.Now);
-						
+
 					}
 
 					float timeNow = Time.realtimeSinceStartup;
@@ -814,7 +790,7 @@ public class PlayerController_ShiftingRewards : MonoBehaviour
 						// end session conditions
 						Debug.Log("last lap eval, " + "rewardsLickedThisLocation= " + rewardsLickedThisLocation + ", numTraversals= " + numTraversals + ", minTrialsTotal " + minTrialsTotal);
 						//        got enough reards this block (redundant)			 OR		hit max possible trials		 OR		going to set a new reward location AND not enough trials left
-						if ( (rewardsLickedThisLocation >= rewardsGetForNewLocation) || (numTraversals >= maxTrialsTotal) || ( (newRewardLocation == true) & ((maxTrialsTotal-numTraversals) < minTrialsPerLocation) ) ) 
+						if ((rewardsLickedThisLocation >= rewardsGetForNewLocation) || (numTraversals >= maxTrialsTotal) || ((newRewardLocation == true) & ((maxTrialsTotal - numTraversals) < minTrialsPerLocation)))
 						{
 							Debug.Log("this was the last lap, numTraversals = " + numTraversals);
 							triggerStopSession = true;
@@ -833,18 +809,18 @@ public class PlayerController_ShiftingRewards : MonoBehaviour
 
 					//if (numTraversals < maxTrialsTotal) // Don't teleport on last sample
 					//{
-						if (triggerStopSession == false)
-						{
-							transform.position = initialPosition;
-							lastPosition = transform.position;
-							justTeleported = true;
-						}
+					if (triggerStopSession == false)
+					{
+						transform.position = initialPosition;
+						lastPosition = transform.position;
+						justTeleported = true;
+					}
 					//}
 
 					rewardFlag = 0;
 
 					if (newRewardLocation == true)
-                    {
+					{
 						float oldRewardPosition = rewardPosition;
 						var randomRel = new System.Random();
 						bool haveRel = false;
@@ -854,12 +830,19 @@ public class PlayerController_ShiftingRewards : MonoBehaviour
 							if (rewardLocRel >= minRewardLocRel & rewardLocRel <= maxRewardLocRel)
 							{
 								rewardPosition = trackLen * rewardLocRel;
-								if ( ((rewardPosition - oldRewardPosition) > rewardZoneBuffer*1.5) || ((rewardPosition - oldRewardPosition) < -rewardZoneBuffer*1.5) )
+								//if (((rewardPosition - oldRewardPosition) > rewardZoneBuffer * 2.5) || ((rewardPosition - oldRewardPosition) < -rewardZoneBuffer * 2.5))
+								if (Mathf.Abs(rewardPosition - oldRewardPosition) > minNewRewardDistance)
 								{
-									haveRel = true;
+									//if (((rewardPosition - secondOldRewardPosition) > rewardZoneBuffer * 2.5) || ((rewardPosition - secondOldRewardPosition) < -rewardZoneBuffer * 2.5))
+									if (Mathf.Abs(rewardPosition - secondOldRewardPosition) > minNewRewardDistance)
+									{
+										haveRel = true;
+										Debug.Log(rewardLocRel + ", " + minRewardLocRel + ", " + maxRewardLocRel + ", " + rewardPosition + ", " + oldRewardPosition + ", " + secondOldRewardPosition + "\t" + minNewRewardDistance); //reward zone debug
+										secondOldRewardPosition = oldRewardPosition;
+									}
 								}
 							}
-							
+
 						}
 						//
 						rewardZoneStart = rewardPosition - rewardZoneBuffer;
@@ -871,35 +854,34 @@ public class PlayerController_ShiftingRewards : MonoBehaviour
 						numMissedRewards = 0;
 						rewardsLickedThisLocation = 0;
 						numTraversalsThisLocation = 0;
-						Debug.Log("New reward position,"  + ", rewardLocRel = " + rewardLocRel + ", rewardPosition = " + rewardPosition);
+						Debug.Log("New reward position" + ", rewardLocRel = " + rewardLocRel + ", rewardPosition = " + rewardPosition);
 
-                        try
-                        {
+						try
+						{
 							fadeRewardZone.ResetTransparency();
-                        }
-                        catch
-                        {
+						}
+						catch
+						{
 							Debug.Log("Failed to reset visible reward zone transparency");
-                        }
+						}
 					}
 
 					//if (requireLickForReward == true)
 					//{
-						automaticRewardFlag = 0;
-						if (numTraversalsThisLocation < freeRewardsEachLocation)
-						{
-							automaticRewardFlag = 1;
-							Debug.Log("Next trial auto reward available for " + freeRewardsEachLocation + " free each location");
-						}
+					automaticRewardFlag = 0;
+					if (numTraversalsThisLocation < freeRewardsEachLocation)
+					{
+						automaticRewardFlag = 1;
+						Debug.Log("Next trial auto reward available for " + freeRewardsEachLocation + " free each location");
+					}
 
-						if (numMissedRewards >= rewardMissesBeforeReminder)
-						{
-							automaticRewardFlag = 1;
-							numMissedRewards = 0;
-							Debug.Log("Next trial automatic reward for " + rewardMissesBeforeReminder + " misses");
-						}
+					if (numMissedRewards >= rewardMissesBeforeReminder)
+					{
+						automaticRewardFlag = 1;
+						numMissedRewards = 0;
+						Debug.Log("Next trial automatic reward for " + rewardMissesBeforeReminder + " misses");
+					}
 					//}
-
 				}
 			}
 
@@ -1024,9 +1006,9 @@ public class PlayerController_ShiftingRewards : MonoBehaviour
 				{
 					float new_z = current_z + delta_z;
 					if (new_z < -5.0f)
-                    {
-						new_z = 0.0f; 
-                    }
+					{
+						new_z = 0.0f;
+					}
 					//transform.position = new Vector3(lastPosition[0], lastPosition[1], current_z + delta_z);
 					transform.position = new Vector3(lastPosition[0], lastPosition[1], new_z);
 				}
@@ -1044,7 +1026,7 @@ public class PlayerController_ShiftingRewards : MonoBehaviour
 									cueOrderPrint + "\t" + delta_T + "\t" + missedArdFrame + "\n");
 
 					if (wrotePosHeader == false)
-                    {
+					{
 						sw_pos_header.Write("transform.position.z" + "\t" + "Time.realtimeSinceStartup" + "\t" + "syncPinState" + "\t" +
 									"pulseMarker" + "\t" + "startStopPinState" + "\t" + "delta_z" + "\t" +
 									"lickPinValue" + "\t" + "rewardFlag" + "\t" + "numTraversals" + "\t" +
@@ -1077,18 +1059,27 @@ public class PlayerController_ShiftingRewards : MonoBehaviour
 		}
 	}
 
-	void ConfigurePins()
+	void SaveSessionParameters()
 	{
-		if (ArdUse == ArduinoUse.Uniduino)
-		{
-			//arduino.pinMode(rewardPin, PinMode.OUTPUT);
-			//arduino.pinMode(stopPin, PinMode.OUTPUT);
-			Debug.Log("Pins configured (player controller)");
-		}
-		else
-		{
-			Debug.Log("Using simulated running");
-		}
+		// Save some params
+		sw_par.Write("trackUse" + "\t" + trackUse + "\n");
+		sw_par.Write("trackLen" + "\t" + trackLen + "\n");
+		sw_par.Write("lickValThresh" + "\t" + lickValThresh + "\n");
+		//sw_par.Write("rewardLocRel" + "\t" + rewardLocRel + "\n");
+		//sw_par.Write("rewardLocInt" + "\t" + rewardLocInt + "\n");
+		sw_par.Write("rewardZoneBuffer" + "\t" + rewardZoneBuffer + "\n");
+		sw_par.Write("rewardMissesBeforeReminder" + "\t" + rewardMissesBeforeReminder + "\n");
+		sw_par.Write("requireLickForReward" + "\t" + requireLickForReward + "\n");
+		sw_par.Write("blackoutBoxPosition" + "\t" + blackoutBoxPosition + "\n");
+		sw_par.Write("UseTimeout" + "\t" + UseTimeout + "\n");
+		sw_par.Write("TimeoutMinimum" + "\t" + TimeoutMinimum + "\n");
+		sw_par.Write("TimeoutMaximum" + "\t" + TimeoutMaximum + "\n");
+		sw_par.Write("BlackRunningSeconds" + "\t" + BlackRunningSeconds + "\n");
+	}
+
+	void WriteRewardFile()
+	{
+		sw_reward.Write(Time.realtimeSinceStartup + "\t" + rewardCount + "\t" + rewardPosition + "\t" + numTraversals + "\t" + rewardZoneAlpha + "\t" + gotAutomaticReward + "\t" + missedReward + "\n");
 	}
 
 	private void connect(string serialPortName, Int32 baudRate, bool autoStart, int delay)
@@ -1115,32 +1106,6 @@ public class PlayerController_ShiftingRewards : MonoBehaviour
 		}
 	}
 
-	/*
-	private void connectRwd(string serialPortName, Int32 baudRate, bool autoStart, int delay)
-	{
-		_serialPortReward = new SerialPort(serialPortName, baudRate);
-		//_serialPort = Win32SerialPort.CreateInstance();
-
-		_serialPortReward.DtrEnable = true; // win32 hack to try to get DataReceived event to fire
-		_serialPortReward.RtsEnable = true;
-		_serialPortReward.PortName = serialPortName;
-		_serialPortReward.BaudRate = baudRate;
-
-		_serialPortReward.DataBits = 8;
-		_serialPortReward.Parity = Parity.None;
-		_serialPortReward.StopBits = StopBits.One;
-		_serialPortReward.ReadTimeout = 5; // since on windows we *cannot* have a separate read thread
-		_serialPortReward.WriteTimeout = 1000;
-
-
-		if (autoStart)
-		{
-			this.delay = delay;
-			this.OpenRwd();
-		}
-	}
-	*/
-
 	private void Open()
 	{
 		_serialPort.Open();
@@ -1151,25 +1116,10 @@ public class PlayerController_ShiftingRewards : MonoBehaviour
 		}
 	}
 
-	/*
-	private void OpenRwd()
-	{
-		_serialPortReward.Open();
-
-		if (_serialPortReward.IsOpen)
-		{
-			Thread.Sleep(delay);
-		}
-	}
-	*/
-
 	private void Close()
 	{
 		if (_serialPort != null)
 			_serialPort.Close();
-
-		//if (_serialPortReward != null)
-		//	_serialPortReward.Close();
 	}
 
 	private void Disconnect()
