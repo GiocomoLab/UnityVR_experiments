@@ -8,10 +8,35 @@ public class ObjectSetHandler : MonoBehaviour
 
     public List<GameObject> allObjectCues;
 
-    public int[] objectSetA = { 0, 1, 2, 3, 4 };
-    public float[] positionsRelA = { 0.1f, 0.21f, 0.45f, 0.6f, 0.87f };
-    public int[] objectSetB = { 5, 6, 7, 8 };
-    public float[] positionsRelB = { 0.15f, 0.3f, 0.55f, 0.9f };
+    public int[] objectSetA;
+    public int[] objectSetB;
+
+    private float[] positionsRelA;
+    private float[] positionsRelB;
+    private float[] positionsRelAlist = { 0.1f, 0.21f, 0.45f, 0.6f, 0.87f };
+    private float[] positionsRelBlist = { 0.15f, 0.3f, 0.55f, 0.9f };
+    private float[] positionsRelClist = { 0.05f, 0.25f, 0.7f, 0.9f };
+    private float[] positionsRelDlist = { 0.2f, 0.35f, 0.6f, 0.95f };
+
+    private List<float[]> allPositionsRelLists = new List<float[]>();
+    /*
+    private int[] objectListA = { 1, 2, 3, 4, 5 };
+    private int[] objectListB = { 6, 8, 9, 10 };
+    private int[] objectListC = { 11, 13, 15, 17 };
+    private int[] objectListD = { 12, 14, 16, 18 };
+    */
+    private int[] objectListA = { 1, 6, 16, 9, 15 };
+    private int[] objectListB = { 5, 17, 12, 2 };
+    private int[] objectListC = { 4, 13, 8, 11 };
+    private int[] objectListD = { 10, 14, 3, 18 };
+
+    //THIS!!!!
+    private int[] objectListE = { 0, 7, 19, 20 };
+    private int[] objectListF = { 21, 22, 23, 24 };
+    private float[] positionsRelElist = { 0.05f, 0.25f, 0.7f, 0.9f };
+    private float[] positionsRelFlist = { 0.2f, 0.35f, 0.6f, 0.95f };
+
+    private List<int[]> allObjectLists = new List<int[]>();
 
     public float[] jitterRangesA = {0.1f, 0.1f, 0.1f, 0.1f, 0.1f};
     public float[] jitterRangesB = { 0.1f, 0.1f, 0.1f, 0.1f };
@@ -56,7 +81,21 @@ public class ObjectSetHandler : MonoBehaviour
             Debug.Log("No object cues attached to object handler");
             UnityEditor.EditorApplication.isPlaying = false;
         }
-        
+
+        allObjectLists.Add(objectListA);
+        allObjectLists.Add(objectListB);
+        allObjectLists.Add(objectListC);
+        allObjectLists.Add(objectListD);
+        allObjectLists.Add(objectListE);
+        allObjectLists.Add(objectListF);
+
+        allPositionsRelLists.Add(positionsRelAlist);
+        allPositionsRelLists.Add(positionsRelBlist);
+        allPositionsRelLists.Add(positionsRelClist);
+        allPositionsRelLists.Add(positionsRelDlist);
+        allPositionsRelLists.Add(positionsRelElist);
+        allPositionsRelLists.Add(positionsRelFlist);
+
         // Get some data from player controller
         trackLenA = playerController.trackLenA;
         trackLenB = playerController.trackLenB;
@@ -67,6 +106,12 @@ public class ObjectSetHandler : MonoBehaviour
         trialNumbersB = playerController.trialNumbersB;
         blocksStableA = playerController.blocksStableA;
         blocksStableB = playerController.blocksStableB;
+
+        objectSetA = allObjectLists[playerController.trackNumA - 1];
+        objectSetB = allObjectLists[playerController.trackNumB - 1];
+
+        positionsRelA = allPositionsRelLists[playerController.trackNumA - 1];
+        positionsRelB = allPositionsRelLists[playerController.trackNumB - 1];
 
         if (((int)trialNumbersA.Count != (int)blocksStableA.Count) || ((int)trialNumbersB.Count != (int)blocksStableB.Count))
         {
