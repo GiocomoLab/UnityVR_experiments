@@ -17,7 +17,7 @@ public class FadeRewardZone : MonoBehaviour
     public int trialsIncreaseTransparencyAfter = 5;
     public float increaseTransparencyBy = 0.1f;
     
-    private int numTraversals;
+    public int numTraversals;
     private int lastTransparencyChangeTrial = 0;
     private Vector3 lastPosition;
 
@@ -54,7 +54,7 @@ public class FadeRewardZone : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        numTraversals = playerController.numTraversals;
+        //numTraversals = playerController.numTraversals;
         // Each traversal, if it's been enough trials, update transparency of reward zone
         if ((numTraversals - lastTransparencyChangeTrial) >= trialsIncreaseTransparencyAfter)
         {

@@ -301,7 +301,8 @@ public class PlayerController_LickTrain : MonoBehaviour
 		blackoutBoxPosition = blackoutBoxPosition + blackoutBoxOffsets;
 		Debug.Log("BlackoutBox position = " + blackoutBoxPosition);
 
-		initialPosition_z = paramsScript.trackStart;
+		//initialPosition_z = paramsScript.trackStart;
+		initialPosition_z = 0.0f;
 		//teleportPosition = paramsScript.trackEnd;
 		teleportPosition = (float)trackLen;
 		//trackLen = (int)teleportPosition;
@@ -311,7 +312,7 @@ public class PlayerController_LickTrain : MonoBehaviour
 		Debug.Log("initial position = " + initialPosition + ", transform.position = " + transform.position);
 
 		// reward params
-		lickForReward = paramsScript.lickForReward;
+		//lickForReward = paramsScript.lickForReward;
 
 		// Set reward boundaries
 		rewardTrial = 1;
@@ -322,7 +323,7 @@ public class PlayerController_LickTrain : MonoBehaviour
 		{ 
 			automaticRewardFlag = 1;
         }
-		Debug.Log("trackLen = " + trackLen + ", rewardLocRel = " + rewardLocRel + ", rewardPosition = " + rewardPosition);
+		Debug.Log("trackLen = " + trackLen + ", rewardLocRel = " + rewardLocRel + ", rewardPosition = " + rewardPosition + ", rewardZoneStart = " + rewardZoneStart + ", rewardZoneEnd = " + rewardZoneEnd);
 
 		// for saving data	
 		mouse = paramsScript.mouse;
@@ -548,11 +549,15 @@ public class PlayerController_LickTrain : MonoBehaviour
 				}
 			}
 
+			if (transform.position.z > rewardZoneStart & transform.position.z < rewardZoneEnd)
+            {
+				//Debug.Log("Position = " + transform.position.z + ", rewardZonePos = " + rewardPosition + ", lickFlag = " + lickFlag + ", lickPinValue = " + lickPinValue + ", rewardFlag = " + rewardFlag + ", lickForReward = " + lickForReward);
+			}
 
 			// Reward
 			//Debug.Log(rewardFlag);
 			// always allow animal to lick for reward in zone if box checked
-			if (lickForReward & transform.position.z > rewardZoneStart & transform.position.z < rewardZoneEnd & rewardFlag == 0)
+			if (transform.position.z > rewardZoneStart & transform.position.z < rewardZoneEnd & rewardFlag == 0)
 			{
 				if (lickFlag == 1)
 				{
@@ -785,7 +790,7 @@ public class PlayerController_LickTrain : MonoBehaviour
 						lickFlag = 0;
 					}
 					//if (lickPinValue < 500 & lickFlag == 0)
-					if (lickPinValue < lickValThresh)
+					if (lickPinValue <= lickValThresh)
 					{
 						numLicks += 1;
 						lickFlag = 1;

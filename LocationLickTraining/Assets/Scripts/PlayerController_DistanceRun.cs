@@ -327,7 +327,8 @@ public class PlayerController_DistanceRun : MonoBehaviour
 		blackoutBoxPosition = blackoutBoxPosition + blackoutBoxOffsets;
 		Debug.Log("BlackoutBox position = " + blackoutBoxPosition);
 
-		initialPosition_z = paramsScript.trackStart;
+		//initialPosition_z = paramsScript.trackStart;
+		initialPosition_z = 0.0f;
 		//teleportPosition = paramsScript.trackEnd;
 		teleportPosition = (float)trackLen;
 		//trackLen = (int)teleportPosition;

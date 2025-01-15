@@ -306,7 +306,8 @@ public class PlayerController_ShiftingRewards : MonoBehaviour
 		blackoutBoxPosition = blackoutBoxPosition + blackoutBoxOffsets;
 		Debug.Log("BlackoutBox position = " + blackoutBoxPosition);
 
-		initialPosition_z = paramsScript.trackStart;
+		//initialPosition_z = paramsScript.trackStart;
+		initialPosition_z = 0.0f;
 		//teleportPosition = paramsScript.trackEnd;
 		teleportPosition = (float)trackLen;
 		//trackLen = (int)teleportPosition;
@@ -316,7 +317,7 @@ public class PlayerController_ShiftingRewards : MonoBehaviour
 		Debug.Log("initial position = " + initialPosition + ", transform.position = " + transform.position);
 
 		// reward params
-		lickForReward = paramsScript.lickForReward;
+		//lickForReward = paramsScript.lickForReward;
 
 		// Set reward boundaries
 		//minNewRewardDistance = rewardZoneBuffer * 3;
@@ -615,8 +616,6 @@ public class PlayerController_ShiftingRewards : MonoBehaviour
 
 					if (saveData)
 					{
-						//sw_reward.Write(Time.realtimeSinceStartup + "\t" + rewardCount + "\t" + rewardPosition + "\t" + numTraversals + "\t" + rewardZoneAlpha + "\t" + 0 + "\t" + 0 + "\n"); //0 0 licked for reward
-						//sw_reward.Write(Time.realtimeSinceStartup + "\t" + rewardCount + "\t" + rewardPosition + "\t" + numTraversals + "\t" + rewardZoneAlpha + "\t" + gotAutomaticReward + "\t" + missedReward + "\n"); //0 0 licked for reward
 						WriteRewardFile();
 					}
 				}
@@ -635,16 +634,13 @@ public class PlayerController_ShiftingRewards : MonoBehaviour
 					Debug.Log("Auto reward delivery " + " Trial= " + (numTraversals + 1) + "numTraversalsThisLocation= " + numTraversalsThisLocation + ", automaticReward= " + automaticRewardFlag + ", num missed rewards= " + numMissedRewards + ", rewardsLickedThisLocation= " + rewardsLickedThisLocation);
 					if (saveData)
 					{
-						//sw_reward.Write(Time.realtimeSinceStartup + "\t" + rewardCount + "\t" + rewardPosition + "\t" + numTraversals + "\t" + rewardZoneAlpha + "\t" + 1 + "\t" + 0 + "\n");  //1 0 auto matic reward
-						//sw_reward.Write(Time.realtimeSinceStartup + "\t" + rewardCount + "\t" + rewardPosition + "\t" + numTraversals + "\t" + rewardZoneAlpha + "\t" + gotAutomaticReward + "\t" + missedReward + "\n")
 						WriteRewardFile();
 					}
-
 				}
 			}
 
 			// missed reward
-			if (automaticRewardFlag == 0 & transform.position.z > rewardZoneEnd & rewardFlag == 0)
+			if (automaticRewardFlag == 0 & transform.position.z > rewardZoneEnd & rewardFlag == 0) // AUto flag should be unnecessary, just a backup?
 			{
 				rewardFlag = 1;
 				numMissedRewards = numMissedRewards + 1;
@@ -657,9 +653,7 @@ public class PlayerController_ShiftingRewards : MonoBehaviour
 				missedReward = 1;
 				if (saveData)
 				{
-					//sw_reward.Write(Time.realtimeSinceStartup + "\t" + rewardCount + "\t" + rewardPosition + "\t" + numTraversals + "\t" + rewardZoneAlpha + "\t" + 0 + "\t" + 1 + "\n"); //0 1 missed reward
 					WriteRewardFile();
-					//sw_reward.Write(Time.realtimeSinceStartup + "\t" + rewardCount + "\t" + rewardPosition + "\t" + numTraversals + "\t" + rewardZoneAlpha + "\t" + gotAutomaticReward + "\t" + missedReward + "\n");
 				}
 
 				/*
@@ -842,7 +836,6 @@ public class PlayerController_ShiftingRewards : MonoBehaviour
 									}
 								}
 							}
-
 						}
 						//
 						rewardZoneStart = rewardPosition - rewardZoneBuffer;

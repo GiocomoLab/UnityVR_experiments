@@ -15,11 +15,11 @@ public class SessionParams : MonoBehaviour {
 	private string serverParamsFile;
 
     // teleport params
-    public float trackStart = 0f;
-	public float trackEnd = 500f;
+    //public float trackStart = 0f;
+	//public float trackEnd = 500f;
 
     // reward params
-    public bool lickForReward = false;
+    //public bool lickForReward = false;
 	//public float pReward = 0.0025f;
 
     // session params
