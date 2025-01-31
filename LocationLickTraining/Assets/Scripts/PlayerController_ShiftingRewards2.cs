@@ -77,6 +77,7 @@ public class PlayerController_ShiftingRewards2 : MonoBehaviour
 	private float maxRewardLocRel = 0.9f;
 	private int missedReward, gotAutomaticReward;
 	private float secondOldRewardPosition, minNewRewardDistance;
+	private int lickedForReward = 0;
 	//private float minDisttoNewRewadRel; // use size of reward zone buffer
 
 	// for each trial's reward
@@ -559,22 +560,23 @@ public class PlayerController_ShiftingRewards2 : MonoBehaviour
 				}
 
 				// Reward
-				missedReward = 0; gotAutomaticReward = 0;
+				missedReward = 0; gotAutomaticReward = 0; lickedForReward = 0;
 				if (transform.position.z > rewardZoneStart & transform.position.z < rewardZoneEnd & rewardFlag == 0)
 				{
 					if (lickFlag == 1)
 					{
 						rewardFlag = 1;
 						cmdWrite = 2;
+						numMissedRewards = 0;
 
 						//rewardNumThisLocation += 1;
 						rewardsLickedThisLocation += 1;
 
-						numMissedRewards = 0;
 						rewardCount += 1;
 						totalRequestedRewards = totalRequestedRewards + 1;
 						totalNonAutoRewards = totalNonAutoRewards + 1;
 
+						lickedForReward = 1;
 						// update debug log and save info
 						Debug.Log("Reward requested " + " Trial= " + (numTraversals + 1) + "numTraversalsThisLocation= " + numTraversalsThisLocation + ", automaticReward= " + automaticRewardFlag + ", num missed rewards= " + numMissedRewards + ", rewardsLickedThisLocation= " + rewardsLickedThisLocation);
 						Debug.Log("Requested " + totalRequestedRewards + " out of " + totalNonAutoRewards);
@@ -583,25 +585,26 @@ public class PlayerController_ShiftingRewards2 : MonoBehaviour
 						{
 							WriteRewardFile();
 						}
+						automaticRewardFlag = 0;
 					}
+				}
 
 					// automatic reward
-					if (automaticRewardFlag == 1 & transform.position.z > rewardPosition)
+				if (automaticRewardFlag == 1 & transform.position.z > rewardPosition & rewardFlag == 0)
+				{
+					rewardFlag = 1;
+					cmdWrite = 2;
+					numMissedRewards = 0;
+
+					rewardCount += 1;
+
+					lickedForReward = 0;
+					// update debug log
+					gotAutomaticReward = 1;
+					Debug.Log("Auto reward delivery " + " Trial= " + (numTraversals + 1) + ", numTraversalsThisLocation= " + numTraversalsThisLocation + ", automaticReward= " + automaticRewardFlag + ", num missed rewards= " + numMissedRewards + ", rewardsLickedThisLocation= " + rewardsLickedThisLocation);
+					if (saveData)
 					{
-						rewardFlag = 1;
-						cmdWrite = 2;
-						numMissedRewards = 0;
-
-						rewardCount += 1;
-
-						// update debug log
-						gotAutomaticReward = 1;
-						Debug.Log("Auto reward delivery " + " Trial= " + (numTraversals + 1) + ", numTraversalsThisLocation= " + numTraversalsThisLocation + ", automaticReward= " + automaticRewardFlag + ", num missed rewards= " + numMissedRewards + ", rewardsLickedThisLocation= " + rewardsLickedThisLocation);
-						if (saveData)
-						{
-							WriteRewardFile();
-						}
-
+						WriteRewardFile();
 					}
 				}
 
@@ -613,6 +616,7 @@ public class PlayerController_ShiftingRewards2 : MonoBehaviour
 					totalMissedRewards = totalMissedRewards + 1;
 					totalNonAutoRewards = totalNonAutoRewards + 1;
 
+					lickedForReward = 0;
 					// update debug log 
 					Debug.Log("Missed Reward, " + " Trial= " + (numTraversals + 1) + "numTraversalsThisLocation= " + numTraversalsThisLocation + ", automaticReward= " + automaticRewardFlag + ", num missed rewards= " + numMissedRewards + ", rewardsLickedThisLocation= " + rewardsLickedThisLocation);
 					Debug.Log("Requested " + totalRequestedRewards + " out of " + totalNonAutoRewards);
@@ -1109,19 +1113,16 @@ public class PlayerController_ShiftingRewards2 : MonoBehaviour
 		sw_par.Write("requireLickForReward" + "\t" + requireLickForReward + "\n");
 		sw_par.Write("minRewardLocRel" + "\t" + minRewardLocRel + "\n");
 		sw_par.Write("maxRewardLocRel" + "\t" + maxRewardLocRel + "\n");
-
-
-	sw_par.Write("minNewRewardDistance", minNewRewardDistance);
+		sw_par.Write("minNewRewardDistance" + "\t" + minNewRewardDistance + "\n");
 }
 	void WriteRewardHeader()
 	{
-		sw_reward.Write("realtimeSinceStartup" + "\t" + "rewardCount" + "\t" + "rewardPosition" + "\t" + "numTraversals" + "\t" + "rewardZoneAlpha" + "\t" + "automaticRewardFlag" + "\t" + "gotAutomaticRewad" + "\t" + "missedReward" + "\n");
+		sw_reward.Write("realtimeSinceStartup" + "\t" + "rewardCount" + "\t" + "rewardPosition" + "\t" + "numTraversals" + "\t" + "rewardZoneAlpha" + "\t" + "automaticRewardFlag" + "\t" + "gotAutomaticRewad" + "\t" + "missedReward" + "\t" + "lickedForReward" + "\n");
 	}
 
 	void WriteRewardFile()
 	{
-
-		sw_reward.Write(Time.realtimeSinceStartup + "\t" + rewardCount + "\t" + rewardPosition + "\t" + numTraversals + "\t" + rewardZoneAlpha + "\t" + automaticRewardFlag + "\t" + gotAutomaticReward + "\t" + missedReward + "\n");
+		sw_reward.Write(Time.realtimeSinceStartup + "\t" + rewardCount + "\t" + rewardPosition + "\t" + numTraversals + "\t" + rewardZoneAlpha + "\t" + automaticRewardFlag + "\t" + gotAutomaticReward + "\t" + missedReward + "\t" + lickedForReward + "\n");
 	}
 
 	private void connect(string serialPortName, Int32 baudRate, bool autoStart, int delay)
@@ -1209,25 +1210,53 @@ public class PlayerController_ShiftingRewards2 : MonoBehaviour
 			{
 				File.Copy(trialTimesFile, serverTrialTimesFile);
 				Debug.Log("Copied the trialTimes file");
+			}
+			catch
+			{ Debug.Log("trialTimes did not copy to the server"); }
+			try
+			{
 				File.Copy(rewardFile, serverRewardFile);
 				Debug.Log("Copied the reward file");
+			}
+			catch
+			{ Debug.Log("reward  did not copy to the server"); }
+			try
+			{
 				File.Copy(positionFile, serverPositionFile);
 				Debug.Log("Copied the position file");
+			}
+			catch
+			{ Debug.Log("position did not copy to the server"); }
+			try
+			{
 				File.Copy(lickFile, serverLickFile);
 				Debug.Log("Copied the lick file");
+			}
+			catch
+			{ Debug.Log("lick did not copy to the server"); }
+			try
+			{
 				File.Copy(startStopFile, serverStartStopFile);
 				Debug.Log("Copied the startStop file");
+			}
+			catch
+			{ Debug.Log("startStop did not copy to the server"); }
+			try
+			{
 				File.Copy(paramsTwoFile, serverParamsTwoFile);
 				Debug.Log("Copied the paramsTwo file");
-				File.Copy(trialListFile, serverTrialListFile);
-				Debug.Log("Copied the trialList file");
+			}
+			catch
+			{ Debug.Log("paramsTwo did not copy to the server"); }
+			//File.Copy(trialListFile, serverTrialListFile);
+			//Debug.Log("Copied the trialList file");
+			try
+			{
 				File.Copy(positionHeaderFile, serverPositionHeaderFile);
 				Debug.Log("Copied the positionHeader file");
 			}
 			catch
-			{
-				Debug.Log("something did not copy to the server");
-			}
+			{ Debug.Log("positionHeader did not copy to the server"); }
 		}
 
 	}
